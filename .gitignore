@@ -21,3 +21,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Add to .gitignore if files are too big
+echo "*.blend" >> .gitignore  # Don't commit Blender source files
+echo "*.fbx" >> .gitignore    # Don't commit FBX if using GLB

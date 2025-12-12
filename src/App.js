@@ -5,10 +5,12 @@ import SceneManager from './components/threejs/SceneManager';
 import TaskManager from './components/ui/TaskManager';
 import ModelSelector from './components/ui/ModelSelector';
 
+
 function App() {
-  const [currentModel, setCurrentModel] = useState('basicCube');
+  const [currentModel, setCurrentModel] = useState('bookshelf');
   const [currentTask, setCurrentTask] = useState(null);
   const [studyProgress, setStudyProgress] = useState(0);
+  
 
   return (
     <div className="App">
@@ -26,9 +28,10 @@ function App() {
         
         <div className="control-panel">
           <ModelSelector 
-            onModelChange={setCurrentModel}
             currentModel={currentModel}
+            onModelChange={setCurrentModel}
           />
+
           <TaskManager 
             currentTask={currentTask}
             onTaskComplete={(result) => {

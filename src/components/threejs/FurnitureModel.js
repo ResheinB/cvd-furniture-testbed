@@ -1,44 +1,44 @@
-// src/components/threejs/FurnitureModel.js
-import React, { useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+// frontend/src/components/threejs/FurnitureModel.js
+import React, { useState } from 'react';
+import ModelLoader from './ModelLoader';
 
-const FurnitureModel = ({ model }) => {
-  const meshRef = useRef();
+const furnitureModels = {
+  bedsideTable: {
+    name: 'BedsideTable',
+    type: 'storage',
+    scale: 1.5,
+    position: [0, 1, 0]
+  },
+  coffeeTable: {
+    name: 'CoffeeTable',
+    type: 'storage', 
+    scale: 1.2,
+    position: [0, 0.5, 0]
+  },
+  counter: {
+    name: 'Counter',
+    type: 'seating',
+    scale: 1,
+    position: [0, 0, 0]
+  },
+  sofa: {
+    name: 'Sofa',
+    type: 'surface',
+    scale: 1,
+    position: [0, 0.5, 0]
+  }
+};
 
-  useFrame((state, delta) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.5;
-    }
-  });
-
-  // Simple model rendering based on model type
-  const getModel = () => {
-    switch (model) {
-      case 'texturedCube':
-        return (
-          <mesh ref={meshRef}>
-            <boxGeometry args={[2, 2, 2]} />
-            <meshStandardMaterial color="orange" roughness={0.8} />
-          </mesh>
-        );
-      case 'colorCube':
-        return (
-          <mesh ref={meshRef}>
-            <boxGeometry args={[2, 2, 2]} />
-            <meshStandardMaterial color="blue" />
-          </mesh>
-        );
-      default: // basicCube
-        return (
-          <mesh ref={meshRef}>
-            <boxGeometry args={[2, 2, 2]} />
-            <meshStandardMaterial color="red" />
-          </mesh>
-        );
-    }
-  };
-
-  return getModel();
+const FurnitureModel = ({ currentModel }) => {
+  const modelConfig = furnitureModels[currentModel] || furnitureModels.bookshelf;
+  
+  return (
+    <ModelLoader
+      modelName={currentModel}
+      position={modelConfig.position}
+      scale={modelConfig.scale}
+    />
+  );
 };
 
 export default FurnitureModel;

@@ -40,3 +40,59 @@
   border-radius: 20px;
   font-weight: bold;
 }
+
+/* frontend/src/App.css - add these */
+.model-selector {
+  margin-bottom: 2rem;
+}
+
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.model-button {
+  padding: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.model-button:hover {
+  border-color: #4CAF50;
+  transform: translateY(-2px);
+}
+
+.model-button.active {
+  border-color: #2196F3;
+  background-color: #e3f2fd;
+}
+
+.model-thumbnail {
+  width: 60px;
+  height: 60px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  font-size: 24px;
+  color: #666;
+}
+
+.model-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.model-type {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.2rem;
+}
