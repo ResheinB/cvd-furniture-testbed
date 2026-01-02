@@ -1,48 +1,62 @@
-// src/App.js
-import React, { useState } from 'react';
+// frontend/src/App.js - Temporary debug version
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import SceneManager from './components/threejs/SceneManager';
-import TaskManager from './components/ui/TaskManager';
-import ModelSelector from './components/ui/ModelSelector';
-
 
 function App() {
   const [currentModel, setCurrentModel] = useState('bookshelf');
-  const [currentTask, setCurrentTask] = useState(null);
-  const [studyProgress, setStudyProgress] = useState(0);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    console.log('App initialized with model:', currentModel);
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="App">
       <header className="app-header">
-        <h1>3D Furniture Accessibility Study</h1>
-        <div className="progress-indicator">
-          Progress: {studyProgress}%
-        </div>
+        <h1>3D Furniture Test</h1>
       </header>
       
-      <div className="main-container">
-        <div className="scene-container">
-          <SceneManager currentModel={currentModel} />
+      <div style={{ padding: '20px' }}>
+        <h2>Current Model: {currentModel}</h2>
+        
+        <div style={{ marginBottom: '20px' }}>
+          <button onClick={() => setCurrentModel('bookshelf')} style={buttonStyle}>
+            Bookshelf
+          </button>
+          <button onClick={() => setCurrentModel('cabinet')} style={buttonStyle}>
+            Cabinet
+          </button>
+          <button onClick={() => setCurrentModel('chair')} style={buttonStyle}>
+            Chair
+          </button>
+          <button onClick={() => setCurrentModel('table')} style={buttonStyle}>
+            Table
+          </button>
         </div>
         
-        <div className="control-panel">
-          <ModelSelector 
-            currentModel={currentModel}
-            onModelChange={setCurrentModel}
-          />
-
-          <TaskManager 
-            currentTask={currentTask}
-            onTaskComplete={(result) => {
-              console.log('Task completed:', result);
-              setStudyProgress(prev => Math.min(prev + 20, 100));
-            }}
-          />
+        <div style={{ width: '800px', height: '600px', border: '1px solid #ccc' }}>
+          {/* Your 3D scene will go here */}
+          <p>3D Scene Placeholder for: {currentModel}</p>
         </div>
       </div>
     </div>
   );
 }
+
+const buttonStyle = {
+  margin: '5px',
+  padding: '10px 20px',
+  fontSize: '16px',
+  backgroundColor: '#4CAF50',
+  color: 'white',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer'
+};
 
 export default App;
