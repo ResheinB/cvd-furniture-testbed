@@ -30,15 +30,34 @@ const furnitureModels = {
 };
 
 const FurnitureModel = ({ currentModel }) => {
-  const modelConfig = furnitureModels[currentModel] || furnitureModels.bookshelf;
+  // DEBUG: Log what we're receiving
+  console.log('FurnitureModel - currentModel:', currentModel);
+  console.log('Available models:', Object.keys(furnitureModels));
+  
+  
+  let modelConfig;
+  
+  if (currentModel && furnitureModels[currentModel]) {
+    modelConfig = furnitureModels[currentModel];
+  } else {
+    console.warn(`Model "${currentModel}" not found, defaulting to bedsideTable`);
+    modelConfig = furnitureModels.bookshelf;
+  }
+  
+  console.log('Using model config:', modelConfig);
   
   return (
     <ModelLoader
-      modelName={currentModel}
+      modelName={currentModel || 'bedsideTable'}
       position={modelConfig.position}
       scale={modelConfig.scale}
     />
   );
+};
+
+
+FurnitureModel.defaultProps = {
+  currentModel: 'bedsideTable'
 };
 
 export default FurnitureModel;

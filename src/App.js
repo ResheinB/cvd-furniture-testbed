@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
-  const [currentModel, setCurrentModel] = useState('bookshelf');
+  const [currentModel, setCurrentModel] = useState('bedsideTable');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,17 +25,17 @@ function App() {
         <h2>Current Model: {currentModel}</h2>
         
         <div style={{ marginBottom: '20px' }}>
-          <button onClick={() => setCurrentModel('bookshelf')} style={buttonStyle}>
-            Bookshelf
+          <button onClick={() => setCurrentModel('bedsideTable')} style={buttonStyle}>
+            BedsideTable
           </button>
-          <button onClick={() => setCurrentModel('cabinet')} style={buttonStyle}>
-            Cabinet
+          <button onClick={() => setCurrentModel('coffeeTable')} style={buttonStyle}>
+            Coffee Table
           </button>
-          <button onClick={() => setCurrentModel('chair')} style={buttonStyle}>
-            Chair
+          <button onClick={() => setCurrentModel('counter')} style={buttonStyle}>
+            Counter
           </button>
-          <button onClick={() => setCurrentModel('table')} style={buttonStyle}>
-            Table
+          <button onClick={() => setCurrentModel('sofa')} style={buttonStyle}>
+            Sofa
           </button>
         </div>
         
