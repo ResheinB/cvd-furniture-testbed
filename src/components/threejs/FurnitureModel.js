@@ -1,47 +1,58 @@
 // frontend/src/components/threejs/FurnitureModel.js
-import React, { useState } from 'react';
+import React from 'react';
 import ModelLoader from './ModelLoader';
 
 const furnitureModels = {
-  bedsideTable: {
-    name: 'BedsideTable',
-    type: 'storage',
+  bedsideTable: {          
+    name: 'Bedside Table',
+    position: [0, 1, 0],
     scale: 1.5,
-    position: [0, 1, 0]
+    type: 'furniture'
   },
-  coffeeTable: {
-    name: 'CoffeeTable',
-    type: 'storage', 
+  coffeeTable: {           
+    name: 'Coffee Table',
+    position: [0, 0.5, 0],
     scale: 1.2,
-    position: [0, 0.5, 0]
+    type: 'furniture'
   },
-  counter: {
+  counter: {               
     name: 'Counter',
-    type: 'seating',
+    position: [0, 1, 0],
     scale: 1,
-    position: [0, 0, 0]
+    type: 'furniture'
   },
-  sofa: {
+  sofa: {                  
     name: 'Sofa',
-    type: 'surface',
+    position: [0, 0.5, 0],
     scale: 1,
-    position: [0, 0.5, 0]
+    type: 'seating'
+  },
+  wardrobe: {               
+    name: 'Wardrobe',
+    position: [0, 1, 0],
+    scale: 1,
+    type: 'furniture'
+  },
+  nightTable: {
+    name: 'Night Table',
+    position: [0, 1, 0],
+    scale: 1,
+    type: 'furniture'
   }
 };
 
 const FurnitureModel = ({ currentModel }) => {
-  // DEBUG: Log what we're receiving
   console.log('FurnitureModel - currentModel:', currentModel);
   console.log('Available models:', Object.keys(furnitureModels));
   
-  
+  // Safely get the model config
   let modelConfig;
   
   if (currentModel && furnitureModels[currentModel]) {
     modelConfig = furnitureModels[currentModel];
   } else {
     console.warn(`Model "${currentModel}" not found, defaulting to bedsideTable`);
-    modelConfig = furnitureModels.bookshelf;
+    modelConfig = furnitureModels.bedsideTable;
   }
   
   console.log('Using model config:', modelConfig);
@@ -55,7 +66,7 @@ const FurnitureModel = ({ currentModel }) => {
   );
 };
 
-
+// Update default to match your first model
 FurnitureModel.defaultProps = {
   currentModel: 'bedsideTable'
 };

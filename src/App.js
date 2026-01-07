@@ -1,5 +1,8 @@
-// frontend/src/App.js - Temporary debug version
+// src/App.js
 import React, { useState, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import FurnitureModel from './components/threejs/FurnitureModel';
 import './App.css';
 
 function App() {
@@ -11,52 +14,65 @@ function App() {
     setIsLoading(false);
   }, []);
 
+  const modelList = [
+    { id: 'bedsideTable', name: 'Bedside Table' },
+    { id: 'coffeeTable', name: 'Coffee Table' },
+    { id: 'counter', name: 'Counter' },
+    { id: 'sofa', name: 'Sofa'},
+    { id: 'wardrobe', name: 'Wardrobe'},
+    { id: 'nightTable', name: 'Night Table'}
+  ];
+
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="loading">Loading...</div>;
   }
 
   return (
     <div className="App">
       <header className="app-header">
-        <h1>3D Furniture Test</h1>
+        <h1>3D Furniture CVD Accessibility Test</h1>
+        <div className="progress-indicator">
+          Model: {currentModel}
+        </div>
       </header>
       
-      <div style={{ padding: '20px' }}>
-        <h2>Current Model: {currentModel}</h2>
-        
-        <div style={{ marginBottom: '20px' }}>
-          <button onClick={() => setCurrentModel('bedsideTable')} style={buttonStyle}>
-            BedsideTable
-          </button>
-          <button onClick={() => setCurrentModel('coffeeTable')} style={buttonStyle}>
-            Coffee Table
-          </button>
-          <button onClick={() => setCurrentModel('counter')} style={buttonStyle}>
-            Counter
-          </button>
-          <button onClick={() => setCurrentModel('sofa')} style={buttonStyle}>
-            Sofa
-          </button>
+      <div className="main-container">
+        <div className="scene-container">
+          <div className="canvas-wrapper">
+            <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1} />
+              
+              <FurnitureModel currentModel={currentModel} />
+              
+              <OrbitControls enableZoom={true} enablePan={true} />
+              <gridHelper args={[10, 10]} />
+            </Canvas>
+          </div>
         </div>
         
-        <div style={{ width: '800px', height: '600px', border: '1px solid #ccc' }}>
-          {/* Your 3D scene will go here */}
-          <p>3D Scene Placeholder for: {currentModel}</p>
+        <div className="control-panel">
+          <h2>Select Furniture Model</h2>
+          <div className="model-selector">
+            <div className="model-grid">
+              {modelList.map((model) => (
+                <button
+                  key={model.id}
+                  className={`model-button ${currentModel === model.id ? 'active' : ''}`}
+                  onClick={() => setCurrentModel(model.id)}
+                >
+                  <div className="model-info">
+                    <strong>{model.name}</strong>
+                    
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-const buttonStyle = {
-  margin: '5px',
-  padding: '10px 20px',
-  fontSize: '16px',
-  backgroundColor: '#4CAF50',
-  color: 'white',
-  border: 'none',
-  borderRadius: '5px',
-  cursor: 'pointer'
-};
 
 export default App;

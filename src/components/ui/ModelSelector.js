@@ -1,4 +1,4 @@
-// frontend/src/components/ui/ModelSelector.js
+// src/components/ui/ModelSelector.js
 import React from 'react';
 
 const ModelSelector = ({ currentModel, onModelChange }) => {
@@ -6,7 +6,9 @@ const ModelSelector = ({ currentModel, onModelChange }) => {
     { id: 'bedsideTable', name: 'BedsideTable', type: 'Control' },
     { id: 'coffeeTable', name: 'CoffeeTable', type: 'Control' },
     { id: 'counter', name: 'Counter', type: 'Intervention' },
-    { id: 'sofa', name: 'Sofa', type: 'Intervention' }
+    { id: 'sofa', name: 'Sofa', type: 'Intervention' },
+    { id: 'wardrobe', name: 'Wardrobe', type: 'Intervention' },
+    { id: 'nightTable', name: 'Night Table', type: 'Intervention' }
   ];
 
   return (
