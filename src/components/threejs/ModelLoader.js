@@ -2,18 +2,22 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { TextureLoader } from 'three';
 
 const ModelLoader = ({ 
   modelName, 
   position = [0, 0, 0], 
   scale = 1,
   currentFilter = 'natural',
+  currentTexture = 'none',
   primaryColor = '#D4A76A',
-  secondaryColor = '#B08D57'
+  secondaryColor = '#B08D57',
+  textureProperties = {}
 }) => {
   const [model, setModel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [texture, setTexture] = useState(null);
   const meshRef = useRef();
   
   // Create Three.js colors from hex strings
@@ -23,52 +27,104 @@ const ModelLoader = ({
   const secondaryThreeColor = useMemo(() => 
     new THREE.Color(secondaryColor), [secondaryColor]);
 
-  // Function to apply colors to a model
-  const applyColorsToModel = (scene) => {
+  // SAFE function to apply colors and textures to a model
+  const applyMaterialToModel = (scene) => {
     if (!scene) return;
     
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
-        const meshName = child.name.toLowerCase();
-        const materialName = child.material.name ? child.material.name.toLowerCase() : '';
-        
         // Store original material if not already stored
         if (!child.userData.originalMaterial) {
           child.userData.originalMaterial = child.material.clone();
         }
         
-        // Apply color based on naming conventions or material properties
-        if (meshName.includes('frame') || 
-            meshName.includes('leg') || 
-            meshName.includes('base') ||
-            meshName.includes('wood') ||
-            meshName.includes('primary') ||
-            materialName.includes('primary') ||
-            materialName.includes('wood') ||
-            materialName.includes('frame') ||
-            (!meshName.includes('cushion') && 
-             !meshName.includes('seat') && 
-             !meshName.includes('fabric') &&
-             !meshName.includes('back') &&
-             !meshName.includes('secondary') &&
-             !materialName.includes('secondary'))) {
-          // Primary color for main structure
-          child.material.color.copy(primaryThreeColor);
+        // Get appropriate color for this part
+        let targetColor;
+        
+        // Check if we should apply secondary color (for cushions, fabrics, etc.)
+        const name = child.name.toLowerCase();
+        const materialName = child.material.name ? child.material.name.toLowerCase() : '';
+        
+        // Determine if this is a cushion/fabric part (secondary color)
+        const isSecondary = name.includes('cushion') || 
+                           name.includes('seat') || 
+                           name.includes('back') ||
+                           name.includes('fabric') ||
+                           name.includes('upholstery') ||
+                           name.includes('leather') ||
+                           materialName.includes('fabric') ||
+                           materialName.includes('leather') ||
+                           materialName.includes('cushion');
+        
+        targetColor = isSecondary ? secondaryThreeColor : primaryThreeColor;
+        
+        // SAFE approach: Only modify color property, preserve all other properties
+        child.material.color.copy(targetColor);
+        
+        // Only apply texture if explicitly requested and we have a texture
+        if (currentTexture !== 'none' && texture) {
+          child.material.map = texture;
+          child.material.map.needsUpdate = true;
+          
+          // Set texture properties
+          child.material.map.wrapS = THREE.RepeatWrapping;
+          child.material.map.wrapT = THREE.RepeatWrapping;
+          child.material.map.repeat.set(
+            textureProperties.repeat?.[0] || 1,
+            textureProperties.repeat?.[1] || 1
+          );
         } else {
-          // Secondary color for accents, cushions, etc.
-          child.material.color.copy(secondaryThreeColor);
+          // Ensure no texture is applied if not wanted
+          child.material.map = null;
         }
         
-        // Apply material properties for better appearance
-        child.material.metalness = 0.1;
-        child.material.roughness = 0.7;
+        // Apply texture properties if they exist
+        if (textureProperties.metalness !== undefined) {
+          child.material.metalness = textureProperties.metalness;
+        }
+        if (textureProperties.roughness !== undefined) {
+          child.material.roughness = textureProperties.roughness;
+        }
+        if (textureProperties.transparent !== undefined) {
+          child.material.transparent = textureProperties.transparent;
+        }
+        if (textureProperties.opacity !== undefined) {
+          child.material.opacity = textureProperties.opacity;
+        }
+        
         child.material.needsUpdate = true;
       }
     });
   };
 
+  // Load texture if needed
   useEffect(() => {
-    console.log(`Loading model: ${modelName}.glb with filter: ${currentFilter}`);
+    if (currentTexture !== 'none' && textureProperties.imageUrl) {
+      const textureLoader = new TextureLoader();
+      textureLoader.load(
+        textureProperties.imageUrl,
+        (loadedTexture) => {
+          loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
+          loadedTexture.repeat.set(
+            textureProperties.repeat?.[0] || 1,
+            textureProperties.repeat?.[1] || 1
+          );
+          loadedTexture.anisotropy = 16; // Improve texture quality
+          setTexture(loadedTexture);
+        },
+        undefined,
+        (err) => {
+          console.warn('Failed to load texture:', err);
+          setTexture(null);
+        }
+      );
+    } else {
+      setTexture(null);
+    }
+  }, [currentTexture, textureProperties]);
+
+  useEffect(() => {
+    console.log(`Loading model: ${modelName}.glb with filter: ${currentFilter}, texture: ${currentTexture}`);
     setLoading(true);
     setError(null);
 
@@ -79,25 +135,28 @@ const ModelLoader = ({
       (gltf) => {
         console.log(`✅ Model ${modelName} loaded successfully!`, gltf);
         
-        // Clone the scene to avoid mutating the original
-        const clonedScene = gltf.scene.clone();
+        // IMPORTANT: Don't clone the scene - use it directly to preserve animations/skeletons
+        const scene = gltf.scene;
         
-        // Center the model
-        const box = new THREE.Box3().setFromObject(clonedScene);
+        // Center the model if needed
+        const box = new THREE.Box3().setFromObject(scene);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        clonedScene.position.x = -center.x;
-        clonedScene.position.y = -center.y + (size.y / 2);
-        clonedScene.position.z = -center.z;
+        // Only center if the model isn't already centered
+        if (Math.abs(center.x) > 0.1 || Math.abs(center.y) > 0.1 || Math.abs(center.z) > 0.1) {
+          scene.position.x = -center.x;
+          scene.position.y = -center.y + (size.y / 2);
+          scene.position.z = -center.z;
+        }
         
-        // Apply initial scale
-        clonedScene.scale.set(scale, scale, scale);
+        // Apply scale - but preserve the model's natural scale
+        scene.scale.set(scale, scale, scale);
         
-        // Apply colors based on current filter
-        applyColorsToModel(clonedScene);
+        // Apply materials based on current filter and texture
+        applyMaterialToModel(scene);
         
-        setModel(clonedScene);
+        setModel(scene);
         setLoading(false);
       },
       (progress) => {
@@ -113,33 +172,22 @@ const ModelLoader = ({
       }
     );
 
-    // Cleanup
+    // Cleanup - be careful not to dispose materials that might be in use
     return () => {
-      if (model) {
-        model.traverse((child) => {
-          if (child.isMesh) {
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) {
-              if (Array.isArray(child.material)) {
-                child.material.forEach(material => material.dispose());
-              } else {
-                child.material.dispose();
-              }
-            }
-          }
-        });
+      if (texture) {
+        texture.dispose();
       }
     };
   }, [modelName, scale]);
 
-  // Apply colors when filter changes
+  // Apply materials when filter or texture changes
   useEffect(() => {
     if (model) {
-      applyColorsToModel(model);
+      applyMaterialToModel(model);
     }
-  }, [currentFilter, primaryThreeColor, secondaryThreeColor, model]);
+  }, [currentFilter, currentTexture, texture, primaryThreeColor, secondaryThreeColor, textureProperties]);
 
-  // Loading state - show placeholder with current filter colors
+  // Loading state
   if (loading) {
     return (
       <group position={position}>
@@ -147,16 +195,8 @@ const ModelLoader = ({
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial 
             color={primaryThreeColor}
-            metalness={0.1}
-            roughness={0.7}
-          />
-        </mesh>
-        <mesh position={[0, 0.8, 0]}>
-          <boxGeometry args={[0.8, 0.2, 0.8]} />
-          <meshStandardMaterial 
-            color={secondaryThreeColor}
-            metalness={0.1}
-            roughness={0.7}
+            transparent={true}
+            opacity={0.5}
           />
         </mesh>
       </group>
@@ -175,14 +215,6 @@ const ModelLoader = ({
             emissiveIntensity={0.2}
           />
         </mesh>
-        <mesh position={[0, 2, 0]}>
-          <boxGeometry args={[1, 0.1, 0.1]} />
-          <meshStandardMaterial color="#ff0000" />
-        </mesh>
-        <mesh position={[0, 1.8, 0]}>
-          <boxGeometry args={[0.1, 0.5, 0.1]} />
-          <meshStandardMaterial color="#ff0000" />
-        </mesh>
       </group>
     );
   }
@@ -190,35 +222,14 @@ const ModelLoader = ({
   // Model loaded successfully
   if (model) {
     return (
-      <primitive 
-        object={model} 
-        position={position}
-        ref={meshRef}
-      />
+      <group position={position} ref={meshRef}>
+        <primitive object={model} />
+      </group>
     );
   }
 
-  // Fallback - show a cube with current filter colors
-  return (
-    <group position={position}>
-      <mesh ref={meshRef}>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial 
-          color={primaryThreeColor}
-          metalness={0.1}
-          roughness={0.7}
-        />
-      </mesh>
-      <mesh position={[0, 1.2, 0]}>
-        <boxGeometry args={[1.5, 0.3, 1.5]} />
-        <meshStandardMaterial 
-          color={secondaryThreeColor}
-          metalness={0.1}
-          roughness={0.7}
-        />
-      </mesh>
-    </group>
-  );
+  // Fallback
+  return null;
 };
 
 export default ModelLoader;

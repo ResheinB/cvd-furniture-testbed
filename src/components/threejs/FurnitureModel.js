@@ -1,4 +1,4 @@
-// frontend/src/components/threejs/FurnitureModel.js
+// src/components/threejs/FurnitureModel.js
 import React from 'react';
 import ModelLoader from './ModelLoader';
 
@@ -59,60 +59,71 @@ const filterColors = {
   trit_pink: { primary: '#F06292', secondary: '#E91E63' }
 };
 
-// Convert hex color to Three.js Color
-const hexToColor = (hex) => {
-  // Remove # if present
-  hex = hex.replace('#', '');
-  
-  // Parse the hex values
-  const r = parseInt(hex.substring(0, 2), 16) / 255;
-  const g = parseInt(hex.substring(2, 4), 16) / 255;
-  const b = parseInt(hex.substring(4, 6), 16) / 255;
-  
-  return { r, g, b };
+// Define texture properties
+const textureProperties = {
+  none: { 
+    type: 'solid',
+    repeat: [1, 1],
+    roughness: 0.7,
+    metalness: 0.1
+  },
+  wood: { 
+    type: 'texture',
+    imageUrl: '/textures/wood.jpg',
+    repeat: [2, 2],
+    roughness: 0.8,
+    metalness: 0.05
+  },
+  marble: { 
+    type: 'texture',
+    imageUrl: '/textures/marble.jpg',
+    repeat: [3, 3],
+    roughness: 0.3,
+    metalness: 0.1
+  },
+  fabric: { 
+    type: 'texture',
+    imageUrl: '/textures/fabric.jpg',
+    repeat: [4, 4],
+    roughness: 0.9,
+    metalness: 0.0
+  },
+  metal: { 
+    type: 'texture',
+    imageUrl: '/textures/metal.jpg',
+    repeat: [8, 8],
+    roughness: 0.2,
+    metalness: 0.8
+  },
+  leather: { 
+    type: 'texture',
+    imageUrl: '/textures/leather.jpg',
+    repeat: [3, 3],
+    roughness: 0.6,
+    metalness: 0.1
+  },
+  concrete: { 
+    type: 'texture',
+    imageUrl: '/textures/concrete.jpg',
+    repeat: [2, 2],
+    roughness: 0.9,
+    metalness: 0.0
+  },
+  glass: { 
+    type: 'texture',
+    imageUrl: '/textures/glass.jpg',
+    repeat: [1, 1],
+    roughness: 0.1,
+    metalness: 0.3,
+    transparent: true,
+    opacity: 0.8
+  }
 };
 
-// Function to apply color to model materials
-const applyColorToModel = (scene, currentFilter) => {
-  if (!scene) return;
-  
-  const colors = filterColors[currentFilter] || filterColors.natural;
-  const primaryColor = hexToColor(colors.primary);
-  const secondaryColor = hexToColor(colors.secondary);
-  
-  scene.traverse((child) => {
-    if (child.isMesh && child.material) {
-      // Check if this is likely a primary or secondary material
-      const materialName = child.material.name.toLowerCase();
-      const meshName = child.name.toLowerCase();
-      
-      // Apply color based on naming conventions
-      if (meshName.includes('frame') || 
-          meshName.includes('leg') || 
-          meshName.includes('base') ||
-          meshName.includes('primary') ||
-          materialName.includes('primary') ||
-          (!meshName.includes('cushion') && 
-           !meshName.includes('seat') && 
-           !meshName.includes('back') &&
-           !meshName.includes('secondary'))) {
-        // Primary color for main structure
-        child.material.color.setRGB(primaryColor.r, primaryColor.g, primaryColor.b);
-      } else {
-        // Secondary color for accents
-        child.material.color.setRGB(secondaryColor.r, secondaryColor.g, secondaryColor.b);
-      }
-      
-      // Apply some material properties for better appearance
-      child.material.needsUpdate = true;
-    }
-  });
-};
-
-const FurnitureModel = ({ currentModel, currentFilter = 'natural' }) => {
+const FurnitureModel = ({ currentModel, currentFilter = 'natural', currentTexture = 'none' }) => {
   console.log('FurnitureModel - currentModel:', currentModel);
   console.log('FurnitureModel - currentFilter:', currentFilter);
-  console.log('Available models:', Object.keys(furnitureModels));
+  console.log('FurnitureModel - currentTexture:', currentTexture);
   
   // Safely get the model config
   let modelConfig;
@@ -124,25 +135,28 @@ const FurnitureModel = ({ currentModel, currentFilter = 'natural' }) => {
     modelConfig = furnitureModels.bedsideTable;
   }
   
-  console.log('Using model config:', modelConfig);
-  
   // Get colors for the current filter
   const colors = filterColors[currentFilter] || filterColors.natural;
+  
+  // Get texture properties
+  const textureProps = textureProperties[currentTexture] || textureProperties.none;
+  
+  // SIMPLIFIED: Use consistent scale for all models
+  const adjustedScale = 0.8;
+  
+  // SIMPLIFIED: Use consistent position
+  const adjustedPosition = [0, 0, 0];
   
   return (
     <ModelLoader
       modelName={currentModel || 'bedsideTable'}
-      position={modelConfig.position}
-      scale={modelConfig.scale}
+      position={adjustedPosition}
+      scale={adjustedScale}
       currentFilter={currentFilter}
-      onModelLoaded={(scene) => {
-        // Apply color when model is loaded
-        if (scene) {
-          applyColorToModel(scene, currentFilter);
-        }
-      }}
+      currentTexture={currentTexture}
       primaryColor={colors.primary}
       secondaryColor={colors.secondary}
+      textureProperties={textureProps}
     />
   );
 };
@@ -150,9 +164,9 @@ const FurnitureModel = ({ currentModel, currentFilter = 'natural' }) => {
 // Update default props
 FurnitureModel.defaultProps = {
   currentModel: 'bedsideTable',
-  currentFilter: 'natural'
+  currentFilter: 'natural',
+  currentTexture: 'none'
 };
 
-// Export helper functions for potential reuse
-export { filterColors, applyColorToModel, hexToColor };
+export { filterColors, textureProperties };
 export default FurnitureModel;

@@ -8,6 +8,7 @@ import './App.css';
 function App() {
   const [currentModel, setCurrentModel] = useState('bedsideTable');
   const [currentFilter, setCurrentFilter] = useState('natural');
+  const [currentTexture, setCurrentTexture] = useState('none'); // 'none' for no texture
   const [isLoading, setIsLoading] = useState(true);
   const modelRef = useRef();
 
@@ -132,6 +133,73 @@ function App() {
     }
   ];
 
+  const textureList = [
+    { 
+      id: 'none', 
+      name: 'No Texture', 
+      description: 'Solid color only',
+      icon: '🟦',
+      type: 'solid'
+    },
+    { 
+      id: 'wood', 
+      name: 'Wood Grain', 
+      description: 'Natural wood texture',
+      icon: '🪵',
+      type: 'texture',
+      imageUrl: '/textures/wood.jpg'
+    },
+    { 
+      id: 'marble', 
+      name: 'Marble', 
+      description: 'Elegant marble texture',
+      icon: '🗿',
+      type: 'texture',
+      imageUrl: '/textures/marble.jpg'
+    },
+    { 
+      id: 'fabric', 
+      name: 'Fabric', 
+      description: 'Soft fabric texture',
+      icon: '🧵',
+      type: 'texture',
+      imageUrl: '/textures/fabric.jpg'
+    },
+    { 
+      id: 'metal', 
+      name: 'Metal', 
+      description: 'Brushed metal texture',
+      icon: '🔩',
+      type: 'texture',
+      imageUrl: '/textures/metal.jpg'
+    },
+    { 
+      id: 'leather', 
+      name: 'Leather', 
+      description: 'Genuine leather texture',
+      icon: '🐄',
+      type: 'texture',
+      imageUrl: '/textures/leather.jpg'
+    },
+    { 
+      id: 'concrete', 
+      name: 'Concrete', 
+      description: 'Industrial concrete texture',
+      icon: '🏗️',
+      type: 'texture',
+      imageUrl: '/textures/concrete.jpg'
+    },
+    { 
+      id: 'glass', 
+      name: 'Glass', 
+      description: 'Transparent glass effect',
+      icon: '🔮',
+      type: 'texture',
+      imageUrl: '/textures/glass.jpg',
+      isTransparent: true
+    }
+  ];
+
   if (isLoading) {
     return <div className="loading">Loading...</div>;
   }
@@ -143,7 +211,8 @@ function App() {
           <h1>3D Furniture CVD Accessibility Test</h1>
           <div className="current-selection">
             <span className="current-model">Model: {modelList.find(m => m.id === currentModel)?.name}</span>
-            <span className="current-filter">Filter: {filterList.find(f => f.id === currentFilter)?.name}</span>
+            <span className="current-filter">Color: {filterList.find(f => f.id === currentFilter)?.name}</span>
+            <span className="current-texture">Texture: {textureList.find(t => t.id === currentTexture)?.name}</span>
           </div>
         </div>
         <div className="progress-indicator">
@@ -155,12 +224,14 @@ function App() {
         <div className="scene-container">
           <div className="canvas-wrapper">
             <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
-              <ambientLight intensity={0.5} />
+            
+              <ambientLight intensity={1.2} color="#ffffff" />
               <directionalLight position={[10, 10, 5]} intensity={1} />
               
               <FurnitureModel 
                 currentModel={currentModel} 
                 currentFilter={currentFilter}
+                currentTexture={currentTexture}
                 ref={modelRef}
               />
               
@@ -248,6 +319,72 @@ function App() {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="control-section">
+            <h2>Texture Options</h2>
+            <div className="texture-toggle">
+              <div className="toggle-group">
+                <button
+                  className={`toggle-button ${currentTexture === 'none' ? 'active' : ''}`}
+                  onClick={() => setCurrentTexture('none')}
+                >
+                  <div className="toggle-icon">🟦</div>
+                  <div className="toggle-info">
+                    <strong>Solid Color</strong>
+                    <span>No texture, pure color</span>
+                  </div>
+                </button>
+                <button
+                  className={`toggle-button ${currentTexture !== 'none' ? 'active' : ''}`}
+                  onClick={() => {
+                    if (currentTexture === 'none') {
+                      setCurrentTexture('wood'); // Default to wood texture
+                    }
+                  }}
+                >
+                  <div className="toggle-icon">🖼️</div>
+                  <div className="toggle-info">
+                    <strong>With Texture</strong>
+                    <span>Apply material texture</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+            
+            {currentTexture !== 'none' && (
+              <div className="texture-section">
+                <h3>Select Texture</h3>
+                <div className="texture-grid">
+                  {textureList.filter(t => t.id !== 'none').map((texture) => (
+                    <button
+                      key={texture.id}
+                      className={`texture-button ${currentTexture === texture.id ? 'active' : ''}`}
+                      onClick={() => setCurrentTexture(texture.id)}
+                      title={texture.description}
+                    >
+                      <div className="texture-preview">
+                        <div className="texture-icon">{texture.icon}</div>
+                        {texture.imageUrl && (
+                          <div 
+                            className="texture-image"
+                            style={{ 
+                              backgroundImage: `url(${texture.imageUrl})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div className="texture-info">
+                        <strong>{texture.name}</strong>
+                        <span className="texture-description">{texture.description}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
