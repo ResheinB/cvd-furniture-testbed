@@ -1,14 +1,22 @@
-// src/components/threejs/FurnitureModel.js
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import * as THREE from 'three';
 import ModelLoader from './ModelLoader';
 
 const FurnitureModel = forwardRef(({ 
   currentModel, 
-  currentFilter = 'white', // Default to white
+  currentFilter = 'white',
   currentTexture = 'none',
   selectedSection = null,
   sectionColors = {},
-  onSectionSelect
+  onSectionSelect,
+  // New props for layout mode
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  scale = 1,
+  normalizedScale = 1, // New: Normalized scale for consistent sizing
+  onClick = null,
+  isSelected = false,
+  mode = 'customize'
 }, ref) => {
   const modelLoaderRef = useRef();
   
@@ -208,24 +216,80 @@ const FurnitureModel = forwardRef(({
   const textureProperties = getTextureProperties();
 
   return (
-    <ModelLoader
-      modelName={currentModel || 'desk'}
-      modelId={currentModel} // Pass model ID for context
-      position={[0, 0, 0]}
-      scale={0.8}
-      currentFilter={currentFilter}
-      currentTexture={currentTexture}
-      primaryColor={colors.primary}
-      secondaryColor={colors.secondary}
-      primaryEmissive={colors.emissive}
-      secondaryEmissive={colors.emissive}
-      emissiveIntensity={colors.emissiveIntensity}
-      textureProperties={textureProperties}
-      selectedSection={selectedSection}
-      sectionColors={sectionColors}
-      onSectionSelect={onSectionSelect}
-      ref={modelLoaderRef}
-    />
+    <group 
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      onClick={(e) => {
+        e.stopPropagation(); // Crucial: Stop event from bubbling up to TransformControls
+        
+        if (mode === 'layout' && onClick) {
+          // Only call onClick in layout mode, not customize mode
+          onClick();
+        } else if (mode === 'customize') {
+          // In customize mode, we rely on the raycaster from ModelLoader
+          // Don't handle click here
+        }
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        if (mode === 'layout') {
+          document.body.style.cursor = 'pointer';
+        }
+      }}
+      onPointerOut={() => {
+        if (mode === 'layout') {
+          document.body.style.cursor = 'move';
+        }
+      }}
+    >
+      {/* Selection highlight in layout mode */}
+      {mode === 'layout' && isSelected && (
+        <group>
+          {/* Bounding box highlight */}
+          <mesh position={[0, 0.5, 0]}>
+            <boxGeometry args={[1.2, 1, 1.2]} />
+            <meshBasicMaterial 
+              color="#00ff00" 
+              transparent 
+              opacity={0.1}
+              wireframe={true}
+            />
+          </mesh>
+          {/* Ground indicator */}
+          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI/2, 0, 0]}>
+            <ringGeometry args={[0.5, 0.7, 32]} />
+            <meshBasicMaterial 
+              color="#00ff00" 
+              transparent 
+              opacity={0.3}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
+      
+      <ModelLoader
+        modelName={currentModel || 'desk'}
+        modelId={currentModel}
+        position={[0, 0, 0]}
+        scale={1} // Scale is now handled by parent group
+        normalizedScale={normalizedScale} // Pass normalized scale
+        currentFilter={currentFilter}
+        currentTexture={currentTexture}
+        primaryColor={colors.primary}
+        secondaryColor={colors.secondary}
+        primaryEmissive={colors.emissive}
+        secondaryEmissive={colors.emissive}
+        emissiveIntensity={colors.emissiveIntensity}
+        textureProperties={textureProperties}
+        selectedSection={selectedSection}
+        sectionColors={sectionColors}
+        onSectionSelect={onSectionSelect}
+        mode={mode} // Pass mode to ModelLoader
+        ref={modelLoaderRef}
+      />
+    </group>
   );
 });
 

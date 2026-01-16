@@ -1005,8 +1005,798 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* Mode Selector */
+.mode-selector {
+  display: flex;
+  gap: 10px;
+  margin-right: 20px;
+}
 
-/* Keep all other existing CSS from previous version */
+.mode-button {
+  padding: 10px 15px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #4a5568;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-button:hover {
+  border-color: #4299e1;
+  transform: translateY(-2px);
+}
+
+.mode-button.active {
+  background: #4299e1;
+  color: white;
+  border-color: #4299e1;
+}
+
+/* Current Selection Updates */
+.current-mode {
+  background: #4299e1 !important;
+  color: white !important;
+}
+
+.current-furniture {
+  background: #48bb78 !important;
+  color: white !important;
+}
+
+/* Layout Controls */
+.layout-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.layout-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.add-furniture {
+  background: #f0f7ff !important;
+  border-color: #4299e1 !important;
+  color: #4299e1 !important;
+}
+
+.add-furniture:hover {
+  background: #e3f2fd !important;
+}
+
+.remove-furniture {
+  background: #fff5f5 !important;
+  border-color: #f44336 !important;
+  color: #f44336 !important;
+  grid-column: span 2;
+}
+
+.remove-furniture:hover {
+  background: #ffe6e6 !important;
+}
+
+.reset-layout {
+  background: #fffaf0 !important;
+  border-color: #f28c28 !important;
+  color: #f28c28 !important;
+  grid-column: span 2;
+}
+
+.reset-layout:hover {
+  background: #ffe6cc !important;
+}
+
+/* Furniture List */
+.furniture-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.furniture-item {
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.furniture-item:hover {
+  background: #f8fafc;
+}
+
+.furniture-item.selected {
+  background: #ebf8ff;
+  border-left: 3px solid #4299e1;
+}
+
+.furniture-item:last-child {
+  border-bottom: none;
+}
+
+.furniture-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.furniture-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.furniture-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.furniture-details strong {
+  font-size: 0.95rem;
+  color: #2d3748;
+}
+
+.furniture-position {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.furniture-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.visibility-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.visibility-toggle:hover {
+  background: #f1f1f1;
+}
+
+/* Transform Controls */
+.transform-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.transform-instruction {
+  color: #718096;
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+.transform-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.transform-button {
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f7fafc;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.transform-button:hover:not(.disabled) {
+  border-color: #4299e1;
+  background: #ebf8ff;
+}
+
+.transform-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.transform-tip {
+  font-size: 0.8rem;
+  color: #718096;
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+}
+
+/* Room Settings */
+.room-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.filter-select, .texture-select {
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #4a5568;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-select:focus, .texture-select:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+/* Transform Mode Indicator */
+.transform-mode {
+  background: #f28c28 !important;
+  color: white !important;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Fix for cursor states */
+.canvas-wrapper {
+  cursor: move !important;
+}
+
+.canvas-wrapper:active {
+  cursor: grabbing !important;
+}
+
+/* Better selection states in furniture list */
+.furniture-item.selected {
+  background: linear-gradient(135deg, #ebf8ff 0%, #e3f2fd 100%);
+  border-left: 4px solid #4299e1;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.15);
+}
+
+/* Transform controls instruction */
+.transform-instruction.selected {
+  background: #ebf8ff;
+  border: 2px solid #4299e1;
+  color: #2d3748;
+  font-weight: 500;
+}
+
+/* Disabled button styling */
+.transform-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f7fafc;
+  border-color: #e2e8f0;
+  color: #a0aec0;
+}
+
+/* Furniture Size Controls */
+.size-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.size-instruction {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.size-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.size-slider-group {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.slider-label {
+  font-weight: 500;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.slider-value {
+  font-weight: 600;
+  color: #4299e1;
+  background: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #4299e1;
+  font-size: 0.85rem;
+  min-width: 45px;
+  text-align: center;
+}
+
+.size-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e2e8f0;
+  outline: none;
+  border-radius: 3px;
+  margin: 10px 0;
+}
+
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4299e1;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.size-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4299e1;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 4px;
+}
+
+/* Size Presets */
+.size-presets {
+  margin-top: 10px;
+}
+
+.size-presets h4 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  color: #4a5568;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.preset-button {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  color: #4a5568;
+  text-align: center;
+}
+
+.preset-button:hover {
+  border-color: #4299e1;
+  background: #ebf8ff;
+}
+
+/* Make furniture scale visible in furniture list */
+.furniture-scale {
+  font-size: 0.75rem;
+  color: #4299e1;
+  font-weight: 500;
+  background: #f0f7ff;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+/* Scrollbar styling for size sliders */
+.size-sliders::-webkit-scrollbar {
+  width: 6px;
+}
+
+.size-sliders::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.size-sliders::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.size-sliders::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Customization count indicators */
+.customization-count {
+  background: #9c27b0 !important;
+  color: white !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.model-custom-count {
+  font-size: 0.7rem;
+  color: #9c27b0;
+  margin-top: 2px;
+  font-weight: 500;
+  background: #f3e5f5;
+  padding: 1px 4px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.furniture-custom-count {
+  font-size: 0.75rem;
+  color: #9c27b0;
+  margin-top: 2px;
+  font-weight: 500;
+  background: #f3e5f5;
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* Selected furniture with customizations */
+.furniture-item.selected .furniture-custom-count {
+  background: #9c27b0;
+  color: white;
+}
+
+/* Model button with customizations */
+.model-button.active .model-custom-count {
+  background: #9c27b0;
+  color: white;
+}
+
+/* Room item count */
+.room-item-count {
+  background: #f28c28 !important;
+  color: white !important;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Furniture Palette */
+.furniture-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.palette-instruction {
+  color: #718096;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  background: #f8fafc;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.palette-item {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.palette-item:hover {
+  border-color: #4299e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+}
+
+.palette-item:active {
+  transform: translateY(0);
+}
+
+.palette-icon {
+  font-size: 32px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.palette-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.palette-info strong {
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+.palette-custom-count {
+  font-size: 0.75rem;
+  color: #9c27b0;
+  font-weight: 500;
+  background: #f3e5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.palette-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.palette-action-button {
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.palette-action-button.clear-room {
+  background: #fff5f5;
+  border-color: #f44336;
+  color: #f44336;
+}
+
+.palette-action-button.clear-room:hover {
+  background: #ffe6e6;
+}
+
+.palette-action-button.reset-room {
+  background: #fffaf0;
+  border-color: #f28c28;
+  color: #f28c28;
+}
+
+.palette-action-button.reset-room:hover {
+  background: #ffe6cc;
+}
+
+/* Empty room state */
+.empty-room {
+  text-align: center;
+  padding: 30px 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 2px dashed #e2e8f0;
+}
+
+.empty-room p {
+  color: #718096;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.empty-hint {
+  font-size: 0.85rem !important;
+  color: #a0aec0 !important;
+  font-style: italic;
+}
+
+/* Rotation tip */
+.rotation-tip {
+  font-size: 0.8rem;
+  color: #718096;
+  font-style: italic;
+  margin: 5px 0 0 0;
+  text-align: center;
+}
+
+/* Grid adjustments for layout mode */
+.canvas-wrapper {
+  position: relative;
+}
+
+/* Make the grid more visible in layout mode */
+.grid-helper {
+  opacity: 0.7;
+}
+
+/* Center marker */
+.center-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: rgba(66, 153, 225, 0.3);
+  border-radius: 50%;
+  border: 2px solid #4299e1;
+  pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .palette-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .palette-icon {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+  }
+  
+  .palette-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .palette-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .current-selection {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .size-sliders {
+    max-height: 300px;
+  }
+  
+  .preset-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Selected furniture highlight */
+.furniture-item.selected .furniture-scale {
+  background: #4299e1;
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .layout-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .remove-furniture,
+  .reset-layout {
+    grid-column: span 1;
+  }
+  
+  .transform-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-right {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .mode-selector {
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .mode-button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .layout-buttons,
+  .transform-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .furniture-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .furniture-actions {
+    align-self: flex-end;
+  }
+}
 
 /* Responsive Design */
 @media (max-width: 1200px) {

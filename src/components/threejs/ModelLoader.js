@@ -1,4 +1,3 @@
-// In ModelLoader.js - Replace the entire file with this version:
 import React, { useEffect, useState, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -10,6 +9,7 @@ const ModelLoader = forwardRef(({
   modelId, // Add modelId prop for context
   position = [0, 0, 0], 
   scale = 1,
+  normalizedScale = 1, // New: Normalized scale for consistent sizing
   currentFilter = 'white',
   currentTexture = 'none',
   primaryColor = '#FFFFFF',
@@ -20,7 +20,8 @@ const ModelLoader = forwardRef(({
   textureProperties = {},
   selectedSection = null,
   sectionColors = {},
-  onSectionSelect
+  onSectionSelect,
+  mode = 'customize' // Add mode prop
 }, ref) => {
   const [model, setModel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -109,7 +110,7 @@ const ModelLoader = forwardRef(({
 
   // Function to perform raycasting
   const performRaycast = (clientX, clientY) => {
-    if (!model || !gl.domElement) return null;
+    if (!model || !gl.domElement || mode === 'layout') return null; // Skip in layout mode
     
     // Convert mouse position to normalized device coordinates
     const rect = gl.domElement.getBoundingClientRect();
@@ -441,9 +442,9 @@ const ModelLoader = forwardRef(({
     }
   }, [currentTexture, textureProperties]);
 
-  // Setup pointer events for the canvas
+  // Setup pointer events for the canvas (only in customize mode)
   useEffect(() => {
-    if (!model || !gl.domElement) return;
+    if (!model || !gl.domElement || mode === 'layout') return; // Don't setup raycaster in layout mode
     
     const handlePointerDown = (event) => {
       if (!model || event.button !== 0) return;
@@ -493,7 +494,7 @@ const ModelLoader = forwardRef(({
     return () => {
       canvas.removeEventListener('pointerdown', handlePointerDown);
     };
-  }, [model, gl, camera, raycaster, mouse, onSectionSelect]);
+  }, [model, gl, camera, raycaster, mouse, onSectionSelect, mode]);
 
   useEffect(() => {
     console.log(`[ModelLoader] Loading model: ${modelName} (ID: ${modelId})`);
@@ -514,13 +515,23 @@ const ModelLoader = forwardRef(({
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
+        // Calculate the largest dimension for normalization
+        const maxDimension = Math.max(size.x, size.y, size.z);
+        
+        // Calculate normalized scale to make all models approximately 2 units in largest dimension
+        const targetSize = 2.0; // Target size for all models
+        const normalizedScaleFactor = targetSize / maxDimension;
+        
+        // Apply combined scale (normalization + user scale)
+        const finalScale = normalizedScaleFactor * normalizedScale;
+        
         if (Math.abs(center.x) > 0.1 || Math.abs(center.y) > 0.1 || Math.abs(center.z) > 0.1) {
           scene.position.x = -center.x;
           scene.position.y = -center.y + (size.y / 2);
           scene.position.z = -center.z;
         }
         
-        scene.scale.set(scale, scale, scale);
+        scene.scale.set(finalScale, finalScale, finalScale);
         
         applyMaterialToModel(scene, true);
         
@@ -547,7 +558,7 @@ const ModelLoader = forwardRef(({
       // Clean up model-specific storage when component unmounts?
       // Note: We keep storage for potential future use of same model
     };
-  }, [modelName, modelId, scale]);
+  }, [modelName, modelId, normalizedScale]);
 
   // Apply materials when filter or texture changes
   useEffect(() => {
