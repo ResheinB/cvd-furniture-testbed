@@ -1,3 +1,17 @@
+/**
+ * Post-processing component for CVD (Color Vision Deficiency) simulation
+ * 
+ * Uses Three.js post-processing pipeline to apply color transformation matrices
+ * Based on scientific research by Brettel, Viénot & Mollon (1997)
+ * 
+ * Features:
+ * - Real-time color transformation via shaders
+ * - Multiple CVD types: protanopia, deuteranopia, tritanopia, achromatopsia
+ * - Adjustable severity
+ * - Preserves alpha channel
+ */
+
+
 import React, { useEffect, useRef } from 'react';
 import { useThree, extend } from '@react-three/fiber';
 import * as THREE from 'three';

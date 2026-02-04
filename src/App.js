@@ -1,3 +1,23 @@
+/**
+ * Main application component for 3D Furniture CVD Accessibility Simulator
+ * 
+ * Features:
+ * - Two modes: Customize (color individual furniture parts) and Layout (arrange furniture in room)
+ * - Scientific CVD (Color Vision Deficiency) simulation filters
+ * - Real-time 3D furniture manipulation with Three.js
+ * - Interactive color customization for furniture sections
+ * - Furniture layout with drag & drop, rotation, and scaling
+ * - Texture application (wood, marble, fabric, metal, etc.)
+ * - Post-processing effects for CVD simulation
+ * 
+ * Key Components:
+ * - React Three Fiber for 3D rendering
+ * - TransformControls for furniture manipulation
+ * - CVD post-processing shaders
+ * - Mode switching between customize and layout
+ * - Persistent furniture customizations
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, TransformControls, Grid, Environment } from '@react-three/drei';
@@ -8,6 +28,8 @@ import CVDPostProcessing from './components/threejs/CVDPostProcessing';
 import './App.css';
 
 function App() {
+   // ========== STATE MANAGEMENT ==========
+  
   const [currentModel, setCurrentModel] = useState('desk');
   const [currentFilter, setCurrentFilter] = useState('none');
   const [currentTexture, setCurrentTexture] = useState('none');
@@ -29,7 +51,7 @@ function App() {
     'table': {},
     'cabinet': {},
   });
-  
+   // Furniture items currently in the room (layout mode)
   const [furnitureSizeScale, setFurnitureSizeScale] = useState({
     'desk': 1.0,
     'chair': 1.0,
@@ -202,6 +224,7 @@ function App() {
     }
   ];
 
+  // ========== TEXTURE OPTIONS ==========
   const textureList = [
     { id: 'none', name: 'No Texture', description: 'Solid color only', icon: '🟦' },
     { id: 'wood', name: 'Wood Grain', description: 'Natural wood texture', icon: '🪵' },
@@ -212,7 +235,7 @@ function App() {
     { id: 'concrete', name: 'Concrete', description: 'Industrial concrete texture', icon: '🏗️' },
     { id: 'glass', name: 'Glass', description: 'Transparent glass effect', icon: '🔮' }
   ];
-
+// ========== FURNITURE MODELS ==========
   const modelList = [
     { id: 'desk', name: 'Desk', icon: '🪑', normalizedScale: 0.8 },
     { id: 'chair', name: 'Chair', icon: '💺', normalizedScale: 0.8 },
@@ -224,7 +247,15 @@ function App() {
     { id: 'cabinet', name: 'Cabinet', icon: '🥘', normalizedScale: 0.8 },
   ];
 
-  // Keyboard shortcuts
+  // ========== KEYBOARD SHORTCUTS ==========
+  /**
+   * Keyboard controls for layout mode:
+   * - W: Translate mode
+   * - E: Rotate mode (Y-axis only)
+   * - R: Scale mode
+   * - ESC: Deselect furniture
+   * - DELETE: Remove selected furniture
+   */
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -267,7 +298,12 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [mode, selectedFurniture]);
 
-  // Update cursor based on state
+   // ========== CURSOR MANAGEMENT ==========
+  /**
+   * Updates cursor based on current state:
+   * - Default: grab (for orbiting camera)
+   * - Transforming: move/grab/nwse-resize based on transform mode
+   */
   useEffect(() => {
     if (mode === 'layout') {
       if (isTransforming) {

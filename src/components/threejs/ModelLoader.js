@@ -1,3 +1,21 @@
+/**
+ * Core 3D model loading and manipulation component
+ * 
+ * Responsibilities:
+ * - Load GLTF models from /models/ directory
+ * - Apply materials, textures, and colors
+ * - Handle section selection via raycasting
+ * - Manage color customizations per model
+ * - Apply CVD filter effects at material level
+ * - Normalize model scales for consistency
+ * 
+ * Uses:
+ * - GLTFLoader for 3D model loading
+ * - Three.js materials and textures
+ * - Raycaster for mouse interaction
+ * - Color transformation for CVD simulation
+ */
+
 import React, { useEffect, useState, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';

@@ -1,3 +1,13 @@
+/**
+ * 3D room layout component
+ * 
+ * Creates a simple room environment for layout mode with:
+ * - Floor plane with grid helper
+ * - Walls for spatial reference
+ * - Proper lighting and shadow reception
+ * - Neutral colors to avoid interference with furniture colors
+ */
+
 import React from 'react';
 import * as THREE from 'three';
 

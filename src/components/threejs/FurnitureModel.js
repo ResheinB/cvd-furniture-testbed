@@ -1,3 +1,25 @@
+/**
+ * Reusable 3D furniture component
+ * 
+ * Responsibilities:
+ * - Load and display 3D furniture models
+ * - Handle section selection for coloring
+ * - Apply textures and CVD filters
+ * - Manage click interactions for both modes
+ * - Provide API for color manipulation
+ * 
+ * Props:
+ * - currentModel: Which furniture model to display
+ * - currentFilter: CVD filter to apply
+ * - currentTexture: Texture to apply
+ * - selectedSection: Currently selected section (customize mode)
+ * - sectionColors: Color mappings for sections
+ * - position/rotation/scale: Transform for layout mode
+ * - isSelected: Whether this furniture is selected in layout mode
+ * - mode: 'customize' or 'layout'
+ */
+
+
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import * as THREE from 'three';
 import ModelLoader from './ModelLoader';
