@@ -1701,6 +1701,880 @@ body {
   pointer-events: none;
 }
 
+/* ============================================
+   CVD SCIENTIFIC SIMULATION STYLES
+   ============================================ */
+
+/* CVD Information Panel */
+.cvd-info-panel {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 320px;
+  pointer-events: auto;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.cvd-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cvd-info-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.cvd-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.cvd-info-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.cvd-info-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.cvd-info-content h5 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.cvd-info-content > p {
+  margin: 0 0 16px 0;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+/* CVD Stats */
+.cvd-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.cvd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cvd-stat-label {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.cvd-stat-value {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* CVD Color Test */
+.cvd-color-test {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+
+.cvd-test-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.cvd-test-row:last-child {
+  margin-bottom: 0;
+}
+
+.cvd-test-label {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  width: 120px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.cvd-test-colors {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.cvd-test-color {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.cvd-test-color:hover {
+  transform: scale(1.1);
+}
+
+.cvd-test-color.red {
+  background: #ff4444;
+}
+
+.cvd-test-color.green {
+  background: #44ff44;
+}
+
+.cvd-test-color.blue {
+  background: #4444ff;
+}
+
+.cvd-test-color.yellow {
+  background: #ffff44;
+}
+
+/* Simulated colors for CVD types */
+.cvd-test-color.simulated.protanopia.red {
+  background: #d45a5a !important;
+}
+
+.cvd-test-color.simulated.protanopia.green {
+  background: #a8d45a !important;
+}
+
+.cvd-test-color.simulated.protanopia.blue {
+  background: #5a5ad4 !important;
+}
+
+.cvd-test-color.simulated.protanopia.yellow {
+  background: #d4d45a !important;
+}
+
+.cvd-test-color.simulated.deuteranopia.red {
+  background: #d45a5a !important;
+}
+
+.cvd-test-color.simulated.deuteranopia.green {
+  background: #d4a85a !important;
+}
+
+.cvd-test-color.simulated.deuteranopia.blue {
+  background: #5a5ad4 !important;
+}
+
+.cvd-test-color.simulated.deuteranopia.yellow {
+  background: #d4d45a !important;
+}
+
+.cvd-test-color.simulated.tritanopia.red {
+  background: #ff4444 !important;
+}
+
+.cvd-test-color.simulated.tritanopia.green {
+  background: #44ff44 !important;
+}
+
+.cvd-test-color.simulated.tritanopia.blue {
+  background: #44aaff !important;
+}
+
+.cvd-test-color.simulated.tritanopia.yellow {
+  background: #aaaaff !important;
+}
+
+.cvd-test-color.simulated.achromatopsia.red,
+.cvd-test-color.simulated.achromatopsia.green,
+.cvd-test-color.simulated.achromatopsia.blue,
+.cvd-test-color.simulated.achromatopsia.yellow {
+  background: #888888 !important;
+}
+
+/* CVD Category Sections in Control Panel */
+.cvd-category-section {
+  margin-bottom: 30px;
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.cvd-category-section h3 {
+  font-size: 1rem;
+  margin-bottom: 16px;
+  color: #2d3748;
+  padding-left: 12px;
+  border-left: 4px solid;
+  font-weight: 700;
+}
+
+.cvd-category-section:nth-child(1) h3 {
+  border-left-color: #e53e3e;
+  background: linear-gradient(135deg, #fff5f5, transparent);
+}
+
+.cvd-category-section:nth-child(2) h3 {
+  border-left-color: #3182ce;
+  background: linear-gradient(135deg, #ebf8ff, transparent);
+}
+
+.cvd-category-section:nth-child(3) h3 {
+  border-left-color: #718096;
+  background: linear-gradient(135deg, #f7fafc, transparent);
+}
+
+/* CVD Test Grid for Preview */
+.cvd-test-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.cvd-test-cell {
+  width: 100%;
+  height: 100%;
+  min-height: 25px;
+}
+
+.cvd-test-cell.red {
+  background: #ff4444;
+}
+
+.cvd-test-cell.green {
+  background: #44ff44;
+}
+
+.cvd-test-cell.blue {
+  background: #4444ff;
+}
+
+.cvd-test-cell.yellow {
+  background: #ffff44;
+}
+
+/* Filter Preview Effects */
+.filter-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.filter-preview-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* CVD Scientific Info Box */
+.cvd-scientific-info {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  padding: 16px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border: 1px solid #667eea30;
+  font-size: 0.85rem;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.cvd-scientific-info h4 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #4c51bf;
+  font-weight: 700;
+}
+
+.cvd-scientific-info p {
+  margin: 0 0 12px 0;
+}
+
+.cvd-scientific-info ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.cvd-scientific-info li {
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.cvd-scientific-info li::before {
+  content: '•';
+  color: #4c51bf;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+/* Filter Meta Info */
+.filter-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.7rem;
+}
+
+.filter-prevalence {
+  background: #e2e8f0;
+  color: #4a5568;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.filter-severity {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.filter-severity[data-severity="Mild"] {
+  background: #feebc8;
+  color: #dd6b20;
+}
+
+.filter-severity[data-severity="Severe"] {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.filter-severity[data-severity="Complete"] {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.filter-severity[data-severity="Partial"] {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+/* Active Filter Badge */
+.filter-card.active .filter-preview::before {
+  content: 'ACTIVE';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 800;
+  z-index: 10;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+}
+
+/* CVD Mode Indicator in Header */
+.cvd-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #764ba230;
+}
+
+.cvd-badge-large {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #764ba2;
+  background: linear-gradient(135deg, #ffffff, #f7fafc);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #764ba2;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cvd-status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-width: 80px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.cvd-status.active {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  box-shadow: 0 2px 10px rgba(72, 187, 120, 0.3);
+}
+
+.cvd-status.inactive {
+  background: linear-gradient(135deg, #a0aec0, #718096);
+  color: white;
+}
+
+/* Remove old canvas wrapper overlay styles */
+.canvas-wrapper::after {
+  display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .cvd-info-panel {
+    max-width: 280px;
+    padding: 16px;
+  }
+  
+  .cvd-test-color {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cvd-info-panel {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    max-width: none;
+    margin: 15px;
+    width: calc(100% - 30px);
+  }
+  
+  .cvd-category-section .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .cvd-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .cvd-mode-indicator {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  
+  .cvd-badge-large {
+    font-size: 0.8rem;
+  }
+  
+  .cvd-status {
+    min-width: 70px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cvd-info-panel {
+    padding: 12px;
+    margin: 10px;
+    width: calc(100% - 20px);
+  }
+  
+  .cvd-info-header h4 {
+    font-size: 0.9rem;
+  }
+  
+  .cvd-info-content h5 {
+    font-size: 1rem;
+  }
+  
+  .cvd-test-color {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .cvd-test-label {
+    width: 100px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Performance optimization for post-processing */
+.canvas-wrapper canvas {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Loading state for CVD processing */
+.cvd-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  z-index: 1000;
+}
+
+/* ============================================
+   SELECTION & TRANSFORM CONTROL STYLES
+   ============================================ */
+
+/* Selection Instructions */
+.selection-instructions {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width: 200px;
+}
+
+.transform-instructions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instruction-key {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 0.9rem;
+  min-width: 40px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.instruction-text {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.selection-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.hint-icon {
+  font-size: 1.2rem;
+}
+
+.hint-text {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+/* Transform Controls UI Enhancements */
+.transform-controls {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.transform-instruction.selected {
+  background: #ebf8ff;
+  padding: 10px;
+  border-radius: 6px;
+  border: 2px solid #4299e1;
+  color: #2d3748;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.transform-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.transform-button {
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.transform-button:hover {
+  border-color: #4299e1;
+  background: #ebf8ff;
+  transform: translateY(-2px);
+}
+
+.transform-button.active {
+  border-color: #4299e1;
+  background: #4299e1;
+  color: white;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+}
+
+.transform-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.transform-button:disabled:hover {
+  border-color: #e2e8f0;
+  background: white;
+}
+
+/* Deselect Section */
+.deselect-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 15px 0;
+}
+
+.deselect-button {
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #718096;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.deselect-button:hover {
+  border-color: #f6ad55;
+  background: #fffaf0;
+  color: #dd6b20;
+}
+
+.delete-button {
+  padding: 10px;
+  border: 2px solid #fed7d7;
+  border-radius: 6px;
+  background: #fff5f5;
+  color: #c53030;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.delete-button:hover {
+  border-color: #fc8181;
+  background: #fed7d7;
+  color: #9b2c2c;
+}
+
+/* Transform tip text */
+.transform-tip {
+  font-size: 0.8rem;
+  color: #718096;
+  margin: 10px 0 5px 0;
+  text-align: center;
+  font-style: italic;
+}
+
+.rotation-tip {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  text-align: center;
+  margin: 0;
+}
+
+/* Cursor states */
+.canvas-wrapper {
+  cursor: grab;
+}
+
+.canvas-wrapper:active:not(.transforming) {
+  cursor: grabbing;
+}
+
+/* Furniture selection feedback in list */
+.furniture-item.selected {
+  background: #ebf8ff;
+  border-left: 4px solid #4299e1;
+  border-radius: 0 6px 6px 0;
+}
+
+.furniture-item.selected .furniture-details {
+  color: #2d3748;
+}
+
+/* Transform mode indicator in header */
+.transform-mode {
+  background: #f28c28 !important;
+  color: white !important;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(242, 140, 40, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(242, 140, 40, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(242, 140, 40, 0); }
+}
+
+/* Prevent Three.js transform controls from interfering */
+.r3f-transform-gizmo {
+  pointer-events: auto !important;
+}
+
+.r3f-transform-gizmo * {
+  pointer-events: auto !important;
+}
+
+/* Make sure canvas accepts pointer events when not transforming */
+.canvas-wrapper canvas {
+  pointer-events: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .selection-instructions {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .transform-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .deselect-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .instruction-key {
+    min-width: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .selection-instructions {
+    padding: 10px;
+  }
+  
+  .instruction-item {
+    gap: 6px;
+  }
+  
+  .instruction-key {
+    font-size: 0.8rem;
+    min-width: 30px;
+    padding: 3px 6px;
+  }
+  
+  .instruction-text {
+    font-size: 0.75rem;
+  }
+  
+  .hint-text {
+    font-size: 0.8rem;
+  }
+  
+  .transform-button {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  
+  .deselect-button,
+  .delete-button {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .palette-grid {

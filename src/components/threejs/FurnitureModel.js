@@ -4,21 +4,21 @@ import ModelLoader from './ModelLoader';
 
 const FurnitureModel = forwardRef(({ 
   currentModel, 
-  currentFilter = 'white',
+  currentFilter = 'none',
   currentTexture = 'none',
   selectedSection = null,
   sectionColors = {},
   onSectionSelect,
-  // New props for layout mode
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = 1,
-  normalizedScale = 1, // New: Normalized scale for consistent sizing
+  normalizedScale = 1,
   onClick = null,
   isSelected = false,
   mode = 'customize'
 }, ref) => {
   const modelLoaderRef = useRef();
+  const groupRef = useRef();
   
   // Get texture properties based on texture ID
   const getTextureProperties = () => {
@@ -26,8 +26,6 @@ const FurnitureModel = forwardRef(({
       'none': { 
         imageUrl: null, 
         repeat: [1, 1],
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         metalness: 0.1,
         roughness: 0.8,
         envMapIntensity: 1
@@ -37,8 +35,6 @@ const FurnitureModel = forwardRef(({
         repeat: [3, 3],
         roughness: 0.7,
         metalness: 0.1,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 1
       },
       'marble': { 
@@ -46,8 +42,6 @@ const FurnitureModel = forwardRef(({
         repeat: [2, 2],
         roughness: 0.3,
         metalness: 0.1,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 1.2
       },
       'fabric': { 
@@ -55,8 +49,6 @@ const FurnitureModel = forwardRef(({
         repeat: [4, 4],
         roughness: 0.9,
         metalness: 0,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 0.8
       },
       'metal': { 
@@ -64,8 +56,6 @@ const FurnitureModel = forwardRef(({
         repeat: [5, 5],
         roughness: 0.4,
         metalness: 0.8,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 1.5
       },
       'leather': { 
@@ -73,8 +63,6 @@ const FurnitureModel = forwardRef(({
         repeat: [3, 3],
         roughness: 0.7,
         metalness: 0.1,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 1
       },
       'concrete': { 
@@ -82,8 +70,6 @@ const FurnitureModel = forwardRef(({
         repeat: [2, 2],
         roughness: 0.9,
         metalness: 0,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 0.8
       },
       'glass': { 
@@ -93,8 +79,6 @@ const FurnitureModel = forwardRef(({
         metalness: 0.3,
         transparent: true,
         opacity: 0.7,
-        emissive: 0x000000,
-        emissiveIntensity: 0,
         envMapIntensity: 2
       }
     };
@@ -102,69 +86,14 @@ const FurnitureModel = forwardRef(({
     return textureMap[currentTexture] || textureMap['none'];
   };
   
-  // Get colors based on current filter
+  // Get default colors (no CVD colors since we use overlays now)
   const getColorsForFilter = () => {
-    const colorMap = {
-      // Default white (always available)
-      'white': { 
-        primary: '#FFFFFF', 
-        secondary: '#F5F5F5',
-        emissive: 0x000000,
-        emissiveIntensity: 0
-      },
-      
-      // CVD colors with emissive properties for better visibility
-      'prot_red': { 
-        primary: '#FF8A65', 
-        secondary: '#F4511E',
-        emissive: 0x442211,
-        emissiveIntensity: 0.1
-      },
-      'prot_green': { 
-        primary: '#81C784', 
-        secondary: '#4CAF50',
-        emissive: 0x112211,
-        emissiveIntensity: 0.1
-      },
-      'deut_blue': { 
-        primary: '#64B5F6', 
-        secondary: '#2196F3',
-        emissive: 0x111133,
-        emissiveIntensity: 0.1
-      },
-      'deut_yellow': { 
-        primary: '#FFD54F', 
-        secondary: '#FFC107',
-        emissive: 0x332211,
-        emissiveIntensity: 0.1
-      },
-      'trit_blue': { 
-        primary: '#4FC3F7', 
-        secondary: '#03A9F4',
-        emissive: 0x112233,
-        emissiveIntensity: 0.1
-      },
-      'trit_pink': { 
-        primary: '#F06292', 
-        secondary: '#E91E63',
-        emissive: 0x331122,
-        emissiveIntensity: 0.1
-      },
-      'achroma_bw': { 
-        primary: '#FFFFFF', 
-        secondary: '#000000',
-        emissive: 0x222222,
-        emissiveIntensity: 0.2
-      },
-      'achroma_contrast': { 
-        primary: '#808080', 
-        secondary: '#333333',
-        emissive: 0x111111,
-        emissiveIntensity: 0.15
-      }
+    return { 
+      primary: '#FFFFFF', 
+      secondary: '#F5F5F5',
+      emissive: 0x000000,
+      emissiveIntensity: 0
     };
-    
-    return colorMap[currentFilter] || colorMap['white'];
   };
   
   // Expose methods from ModelLoader
@@ -215,33 +144,48 @@ const FurnitureModel = forwardRef(({
   const colors = getColorsForFilter();
   const textureProperties = getTextureProperties();
 
+  // Handle click with proper event propagation
+  const handleClick = (e) => {
+    e.stopPropagation(); // Crucial: Prevent event from bubbling to canvas
+    
+    if (mode === 'layout' && onClick) {
+      onClick();
+    } else if (mode === 'customize' && onSectionSelect) {
+      // In customize mode, we rely on the raycaster from ModelLoader
+      // Don't handle click here
+    }
+  };
+
+  // Handle pointer events for better UX
+  const handlePointerOver = (e) => {
+    e.stopPropagation();
+    if (mode === 'layout') {
+      // Only change cursor if not already selected
+      if (!isSelected) {
+        document.body.style.cursor = 'pointer';
+      }
+    }
+  };
+
+  const handlePointerOut = (e) => {
+    e.stopPropagation();
+    if (mode === 'layout') {
+      // Only reset cursor if not selected and not transforming
+      if (!isSelected) {
+        document.body.style.cursor = 'grab';
+      }
+    }
+  };
+
   return (
     <group 
+      ref={groupRef}
       position={position}
       rotation={rotation}
       scale={scale}
-      onClick={(e) => {
-        e.stopPropagation(); // Crucial: Stop event from bubbling up to TransformControls
-        
-        if (mode === 'layout' && onClick) {
-          // Only call onClick in layout mode, not customize mode
-          onClick();
-        } else if (mode === 'customize') {
-          // In customize mode, we rely on the raycaster from ModelLoader
-          // Don't handle click here
-        }
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        if (mode === 'layout') {
-          document.body.style.cursor = 'pointer';
-        }
-      }}
-      onPointerOut={() => {
-        if (mode === 'layout') {
-          document.body.style.cursor = 'move';
-        }
-      }}
+      onClick={handleClick}
+      onPointerOver={handlePointerOver}
+      onPointerOut={handlePointerOut}
     >
       {/* Selection highlight in layout mode */}
       {mode === 'layout' && isSelected && (
@@ -273,8 +217,8 @@ const FurnitureModel = forwardRef(({
         modelName={currentModel || 'desk'}
         modelId={currentModel}
         position={[0, 0, 0]}
-        scale={1} // Scale is now handled by parent group
-        normalizedScale={normalizedScale} // Pass normalized scale
+        scale={1}
+        normalizedScale={normalizedScale}
         currentFilter={currentFilter}
         currentTexture={currentTexture}
         primaryColor={colors.primary}
@@ -286,7 +230,7 @@ const FurnitureModel = forwardRef(({
         selectedSection={selectedSection}
         sectionColors={sectionColors}
         onSectionSelect={onSectionSelect}
-        mode={mode} // Pass mode to ModelLoader
+        mode={mode}
         ref={modelLoaderRef}
       />
     </group>

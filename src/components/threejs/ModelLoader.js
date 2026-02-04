@@ -6,22 +6,22 @@ import { useThree } from '@react-three/fiber';
 
 const ModelLoader = forwardRef(({ 
   modelName, 
-  modelId, // Add modelId prop for context
+  modelId,
   position = [0, 0, 0], 
   scale = 1,
-  normalizedScale = 1, // New: Normalized scale for consistent sizing
-  currentFilter = 'white',
+  normalizedScale = 1,
+  currentFilter = 'none',
   currentTexture = 'none',
   primaryColor = '#FFFFFF',
   secondaryColor = '#F5F5F5',
-  primaryEmissive = 0x000000, // Add emissive properties
+  primaryEmissive = 0x000000,
   secondaryEmissive = 0x000000,
   emissiveIntensity = 0,
   textureProperties = {},
   selectedSection = null,
   sectionColors = {},
   onSectionSelect,
-  mode = 'customize' // Add mode prop
+  mode = 'customize'
 }, ref) => {
   const [model, setModel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,31 +29,25 @@ const ModelLoader = forwardRef(({
   const [texture, setTexture] = useState(null);
   const { camera, gl } = useThree();
   
-  // Raycasting setup
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const mouse = useMemo(() => new THREE.Vector2(), []);
   
-  // Create Three.js colors from hex strings
   const primaryThreeColor = useMemo(() => 
     new THREE.Color(primaryColor), [primaryColor]);
   
   const secondaryThreeColor = useMemo(() => 
     new THREE.Color(secondaryColor), [secondaryColor]);
 
-   const primaryEmissiveColor = useMemo(() => 
+  const primaryEmissiveColor = useMemo(() => 
     new THREE.Color(primaryEmissive), [primaryEmissive]);
   
   const secondaryEmissiveColor = useMemo(() => 
     new THREE.Color(secondaryEmissive), [secondaryEmissive]);
   
-  // Store original colors PER MODEL using modelId as key
   const originalColors = useRef({});
   const originalEmissive = useRef({});
-  
-  // Track which sections have custom colors PER MODEL
   const customSections = useRef({});
 
-  // Initialize storage for current model
   useEffect(() => {
     if (modelId && !originalColors.current[modelId]) {
       originalColors.current[modelId] = new Map();
@@ -62,7 +56,6 @@ const ModelLoader = forwardRef(({
     }
   }, [modelId]);
 
-  // Get current model's storage
   const getCurrentModelStorage = () => {
     if (!modelId) return { colors: new Map(), emissive: new Map(), sections: new Set() };
     return {
@@ -72,7 +65,6 @@ const ModelLoader = forwardRef(({
     };
   };
 
-  // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
     applyColorToSection: (sectionName, color) => {
       return applyColorToSpecificSection(sectionName, color);
@@ -84,14 +76,12 @@ const ModelLoader = forwardRef(({
       const storage = getCurrentModelStorage();
       const count = storage.sections.size;
       
-      // Clear all stored colors for current model
       storage.colors.clear();
       storage.emissive.clear();
       storage.sections.clear();
       
-      // Reset all meshes to their default color based on current filter
       if (model) {
-        applyMaterialToModel(model, false); // Don't preserve custom colors
+        applyMaterialToModel(model, false);
       }
       
       return count;
@@ -108,19 +98,15 @@ const ModelLoader = forwardRef(({
     }
   }), [model, modelId]);
 
-  // Function to perform raycasting
   const performRaycast = (clientX, clientY) => {
-    if (!model || !gl.domElement || mode === 'layout') return null; // Skip in layout mode
+    if (!model || !gl.domElement || mode === 'layout') return null;
     
-    // Convert mouse position to normalized device coordinates
     const rect = gl.domElement.getBoundingClientRect();
     mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
     
-    // Update the raycaster with camera and mouse position
     raycaster.setFromCamera(mouse, camera);
     
-    // Get all intersectable objects from the model
     const intersectableObjects = [];
     model.traverse((child) => {
       if (child.isMesh && child.visible) {
@@ -128,13 +114,11 @@ const ModelLoader = forwardRef(({
       }
     });
     
-    // Calculate objects intersecting the picking ray
     const intersects = raycaster.intersectObjects(intersectableObjects, true);
     
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
       
-      // Find the mesh name (go up the hierarchy if needed)
       let meshName = clickedObject.name;
       let parent = clickedObject.parent;
       
@@ -157,7 +141,6 @@ const ModelLoader = forwardRef(({
     return null;
   };
 
-  // Function to get all available sections in the model
   const getAllSectionNames = () => {
     const sections = new Set();
     if (model) {
@@ -170,7 +153,6 @@ const ModelLoader = forwardRef(({
     return Array.from(sections);
   };
 
-  // Function to get all available sections (including unnamed)
   const getAvailableSections = () => {
     const sections = new Set();
     if (model) {
@@ -184,7 +166,6 @@ const ModelLoader = forwardRef(({
     return Array.from(sections);
   };
 
-  // Function to apply color to a specific section
   const applyColorToSpecificSection = (sectionName, color) => {
     if (!model || !modelId) {
       console.error('[applyColorToSpecificSection] Model not loaded or no modelId');
@@ -206,25 +187,17 @@ const ModelLoader = forwardRef(({
           sectionFound = true;
           const meshId = child.uuid;
           
-          // Store original color if not already stored
           if (!storage.colors.has(meshId)) {
             storage.colors.set(meshId, child.material.color.clone());
             storage.emissive.set(meshId, {
               color: child.material.emissive.clone(),
               intensity: child.material.emissiveIntensity
             });
-            console.log(`[${modelId}] Stored original color for mesh: ${meshName}`);
           }
           
-          // Apply the new color
           child.material.color.copy(threeColor);
-          
-          // Add to custom sections tracking
           storage.sections.add(meshName || sectionName);
-          
           child.material.needsUpdate = true;
-          
-          console.log(`[${modelId}] Applied color to: "${meshName}"`);
         }
       }
     });
@@ -236,7 +209,6 @@ const ModelLoader = forwardRef(({
     return sectionFound;
   };
 
-  // Function to reset a specific section to its original color
   const resetSpecificSection = (sectionName) => {
     if (!model || !modelId) return;
     
@@ -268,22 +240,14 @@ const ModelLoader = forwardRef(({
           child.material.needsUpdate = true;
           resetCount++;
           
-          // Remove from stored originals
           storage.colors.delete(meshId);
           storage.emissive.delete(meshId);
-          
-          // Remove from custom sections tracking
           storage.sections.delete(meshName || sectionName);
-          
-          console.log(`[${modelId}] Reset mesh: "${meshName}"`);
         }
       }
     });
-    
-    console.log(`[${modelId}] Reset ${resetCount} meshes for section "${sectionName}"`);
   };
 
-  // Check if a section has custom color
   const hasCustomColor = (meshName) => {
     if (!meshName || !modelId) return false;
     
@@ -303,15 +267,13 @@ const ModelLoader = forwardRef(({
     return false;
   };
 
-  // Apply colors and textures to a model (preserves custom colors)
-   const applyMaterialToModel = (scene, preserveCustomColors = true) => {
+  const applyMaterialToModel = (scene, preserveCustomColors = true) => {
     if (!scene) return;
     
     const storage = getCurrentModelStorage();
     
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
-        // Ensure material is MeshStandardMaterial for better lighting
         if (!(child.material instanceof THREE.MeshStandardMaterial)) {
           child.material = new THREE.MeshStandardMaterial({
             color: child.material.color,
@@ -326,13 +288,10 @@ const ModelLoader = forwardRef(({
         const meshName = child.name || '';
         const isCustomized = preserveCustomColors && hasCustomColor(meshName);
         
-        // SKIP custom colored sections if we're preserving them
         if (isCustomized) {
-          // Keep the custom color - don't override it
           if (currentTexture !== 'none' && texture) {
             child.material.map = texture;
             child.material.map.needsUpdate = true;
-            
             child.material.map.wrapS = THREE.RepeatWrapping;
             child.material.map.wrapT = THREE.RepeatWrapping;
             child.material.map.repeat.set(
@@ -343,11 +302,9 @@ const ModelLoader = forwardRef(({
             child.material.map = null;
           }
         } else {
-          // Apply default color logic for non-customized sections
           const name = child.name ? child.name.toLowerCase() : '';
           const materialName = child.material.name ? child.material.name.toLowerCase() : '';
           
-          // Determine if this is a cushion/fabric part (secondary color)
           const isSecondary = name.includes('cushion') || 
                              name.includes('seat') || 
                              name.includes('back') ||
@@ -361,18 +318,13 @@ const ModelLoader = forwardRef(({
           const targetColor = isSecondary ? secondaryThreeColor : primaryThreeColor;
           const targetEmissive = isSecondary ? secondaryEmissiveColor : primaryEmissiveColor;
           
-          // Apply the color
           child.material.color.copy(targetColor);
-          
-          // Apply emissive for better visibility (especially for dark colors)
           child.material.emissive.copy(targetEmissive);
           child.material.emissiveIntensity = emissiveIntensity;
           
-          // Apply texture if needed
           if (currentTexture !== 'none' && texture) {
             child.material.map = texture;
             child.material.map.needsUpdate = true;
-            
             child.material.map.wrapS = THREE.RepeatWrapping;
             child.material.map.wrapT = THREE.RepeatWrapping;
             child.material.map.repeat.set(
@@ -384,7 +336,6 @@ const ModelLoader = forwardRef(({
           }
         }
         
-        // Apply texture properties if they exist (always apply these)
         if (textureProperties.metalness !== undefined) {
           child.material.metalness = textureProperties.metalness;
         }
@@ -397,26 +348,14 @@ const ModelLoader = forwardRef(({
         if (textureProperties.opacity !== undefined) {
           child.material.opacity = textureProperties.opacity;
         }
-        if (textureProperties.emissiveIntensity !== undefined) {
-          child.material.emissiveIntensity = textureProperties.emissiveIntensity;
-        }
         
-        // Set envMap intensity for better reflections
-        if (textureProperties.envMapIntensity !== undefined) {
-          child.material.envMapIntensity = textureProperties.envMapIntensity;
-        }
-        
-        // Ensure materials are properly updated
         child.material.needsUpdate = true;
-        
-        // Enable shadow casting for better depth perception
         child.castShadow = true;
         child.receiveShadow = true;
       }
     });
   };
 
-  // Load texture if needed
   useEffect(() => {
     if (currentTexture !== 'none' && textureProperties.imageUrl) {
       const textureLoader = new TextureLoader();
@@ -442,9 +381,8 @@ const ModelLoader = forwardRef(({
     }
   }, [currentTexture, textureProperties]);
 
-  // Setup pointer events for the canvas (only in customize mode)
   useEffect(() => {
-    if (!model || !gl.domElement || mode === 'layout') return; // Don't setup raycaster in layout mode
+    if (!model || !gl.domElement || mode === 'layout') return;
     
     const handlePointerDown = (event) => {
       if (!model || event.button !== 0) return;
@@ -510,19 +448,13 @@ const ModelLoader = forwardRef(({
         
         const scene = gltf.scene;
         
-        // Center the model
         const box = new THREE.Box3().setFromObject(scene);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        // Calculate the largest dimension for normalization
         const maxDimension = Math.max(size.x, size.y, size.z);
-        
-        // Calculate normalized scale to make all models approximately 2 units in largest dimension
-        const targetSize = 2.0; // Target size for all models
+        const targetSize = 2.0;
         const normalizedScaleFactor = targetSize / maxDimension;
-        
-        // Apply combined scale (normalization + user scale)
         const finalScale = normalizedScaleFactor * normalizedScale;
         
         if (Math.abs(center.x) > 0.1 || Math.abs(center.y) > 0.1 || Math.abs(center.z) > 0.1) {
@@ -555,29 +487,23 @@ const ModelLoader = forwardRef(({
       if (texture) {
         texture.dispose();
       }
-      // Clean up model-specific storage when component unmounts?
-      // Note: We keep storage for potential future use of same model
     };
   }, [modelName, modelId, normalizedScale]);
 
-  // Apply materials when filter or texture changes
   useEffect(() => {
     if (model) {
       applyMaterialToModel(model, true);
     }
   }, [currentFilter, currentTexture, texture, primaryThreeColor, secondaryThreeColor, textureProperties, model]);
 
-  // Apply section colors from props (model-specific)
   useEffect(() => {
     if (model && sectionColors && modelId) {
-      console.log(`[${modelId}] Applying section colors from props:`, sectionColors);
       Object.entries(sectionColors).forEach(([section, color]) => {
         applyColorToSpecificSection(section, color);
       });
     }
   }, [sectionColors, model, modelId]);
 
-  // Loading state
   if (loading) {
     return (
       <group position={position}>
@@ -593,7 +519,6 @@ const ModelLoader = forwardRef(({
     );
   }
 
-  // Error state
   if (error) {
     return (
       <group position={position}>
@@ -609,7 +534,6 @@ const ModelLoader = forwardRef(({
     );
   }
 
-  // Model loaded successfully
   if (model) {
     return (
       <group position={position}>
