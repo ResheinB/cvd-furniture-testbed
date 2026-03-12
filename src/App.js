@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, TransformControls, Environment } from '@react-three/drei';
+import { OrbitControls, TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
 import FurnitureModel from './components/threejs/FurnitureModel';
 import RoomLayout from './components/threejs/RoomLayout';
@@ -8,7 +8,7 @@ import CVDPostProcessing from './components/threejs/CVDPostProcessing';
 import './App.css';
 
 /* =========================================
-   UI COMPONENTS (Artsy Theme)
+   UI COMPONENTS
    ========================================= */
 
 const Tooltip = ({ children, text }) => (
@@ -52,12 +52,8 @@ function App() {
   });
   const [furnitureItems, setFurnitureItems] = useState([]);
   
-  // Room Finishes State
   const [wallColor, setWallColor] = useState('#e8e8e8');
   const [floorTexture, setFloorTexture] = useState('none');
-
-  // Feedback Form State
-  const [showFeedback, setShowFeedback] = useState(false);
   
   const orbitControlsRef = useRef();
   const transformControlsRef = useRef();
@@ -75,62 +71,53 @@ function App() {
 
   // ========== CONSTANTS ==========
   const sectionColorPalette = [
-    '#2c2a29', '#f7f5f0', '#d96c53', '#849681', '#dfb36b', '#c1a68d', 
-    '#A6764D', '#F5F5F5', '#8A2BE2', '#FF6B6B', '#4ECDC4', '#45B7D1',
-    '#D4A76A', '#3C2F2F', '#E1C699', '#FFFFFF', '#808080', '#2196F3', '#4CAF50', '#F44336'
+    '#0f172a', '#f8fafc', '#64748b', '#ef4444', '#f59e0b', '#10b981', 
+    '#3b82f6', '#8b5cf6', '#ec4899', '#A6764D', '#D4A76A', '#3C2F2F'
   ];
 
   const cvdColorPalette = [
-    { color: '#000000', name: 'Black', hex: '#000000', description: 'Deep black' },
-    { color: '#FFFFFF', name: 'White', hex: '#FFFFFF', description: 'Pure white' },
-    { color: '#FF0000', name: 'Red', hex: '#FF0000', description: 'Bright red' },
-    { color: '#0000FF', name: 'Blue', hex: '#0000FF', description: 'Deep blue' },
-    { color: '#FFFF00', name: 'Yellow', hex: '#FFFF00', description: 'Bright yellow' },
-    { color: '#008000', name: 'Green', hex: '#008000', description: 'Forest green' },
-    { color: '#FFA500', name: 'Orange', hex: '#FFA500', description: 'Warm orange' },
-    { color: '#800080', name: 'Purple', hex: '#800080', description: 'Royal purple' },
-    { color: '#A52A2A', name: 'Brown', hex: '#A52A2A', description: 'Warm brown' },
-    { color: '#808080', name: 'Gray', hex: '#808080', description: 'Medium gray' },
-    { color: '#FFC0CB', name: 'Pink', hex: '#FFC0CB', description: 'Soft pink' },
-    { color: '#00FFFF', name: 'Cyan', hex: '#00FFFF', description: 'Bright cyan' },
-    { color: '#FF00FF', name: 'Magenta', hex: '#FF00FF', description: 'Vibrant magenta' },
-    { color: '#C0C0C0', name: 'Silver', hex: '#C0C0C0', description: 'Metallic silver' },
-    { color: '#FFD700', name: 'Gold', hex: '#FFD700', description: 'Rich gold' },
-    { color: '#4B0082', name: 'Indigo', hex: '#4B0082', description: 'Deep indigo' },
+    { color: '#000000', name: 'Black', hex: '#000000' },
+    { color: '#FFFFFF', name: 'White', hex: '#FFFFFF' },
+    { color: '#FF0000', name: 'Red', hex: '#FF0000' },
+    { color: '#0000FF', name: 'Blue', hex: '#0000FF' },
+    { color: '#FFFF00', name: 'Yellow', hex: '#FFFF00' },
+    { color: '#008000', name: 'Green', hex: '#008000' },
+    { color: '#FFA500', name: 'Orange', hex: '#FFA500' },
+    { color: '#800080', name: 'Purple', hex: '#800080' },
+    { color: '#A52A2A', name: 'Brown', hex: '#A52A2A' },
+    { color: '#808080', name: 'Gray', hex: '#808080' },
+    { color: '#FFC0CB', name: 'Pink', hex: '#FFC0CB' },
+    { color: '#00FFFF', name: 'Cyan', hex: '#00FFFF' },
   ];
 
   const cvdSimulationFilters = [
-    { id: 'none', name: 'No Filter', description: 'Normal color vision', type: 'none', matrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1], prevalence: 'Normal vision', severity: 'N/A' },
-    { id: 'protanopia', name: 'Protanopia', description: 'Cannot perceive red light (red cones missing)', type: 'protanopia', matrix: [0.567,0.433,0,0,0.558,0.442,0,0,0,0.242,0.758,0,0,0,0,1], prevalence: '1% of males', severity: 'Severe' },
-    { id: 'protanomaly', name: 'Protanomaly', description: 'Reduced sensitivity to red light (red cones abnormal)', type: 'protanomaly', matrix: [0.817,0.183,0,0,0.333,0.667,0,0,0,0.125,0.875,0,0,0,0,1], prevalence: '1% of males', severity: 'Mild' },
-    { id: 'deuteranopia', name: 'Deuteranopia', description: 'Cannot perceive green light (green cones missing)', type: 'deuteranopia', matrix: [0.625,0.375,0,0,0.7,0.3,0,0,0,0.3,0.7,0,0,0,0,1], prevalence: '1% of males', severity: 'Severe' },
-    { id: 'deuteranomaly', name: 'Deuteranomaly', description: 'Reduced sensitivity to green light (green cones abnormal)', type: 'deuteranomaly', matrix: [0.8,0.2,0,0,0.258,0.742,0,0,0,0.142,0.858,0,0,0,0,1], prevalence: '5% of males', severity: 'Mild' },
-    { id: 'tritanopia', name: 'Tritanopia', description: 'Cannot perceive blue light (blue cones missing)', type: 'tritanopia', matrix: [0.95,0.05,0,0,0,0.433,0.567,0,0,0.475,0.525,0,0,0,0,1], prevalence: '0.01% of population', severity: 'Severe' },
-    { id: 'tritanomaly', name: 'Tritanomaly', description: 'Reduced sensitivity to blue light (blue cones abnormal)', type: 'tritanomaly', matrix: [0.967,0.033,0,0,0,0.733,0.267,0,0,0.183,0.817,0,0,0,0,1], prevalence: '0.01% of population', severity: 'Mild' },
-    { id: 'achromatopsia', name: 'Achromatopsia', description: 'Complete color blindness (all cones missing)', type: 'achromatopsia', matrix: [0.299,0.587,0.114,0,0.299,0.587,0.114,0,0.299,0.587,0.114,0,0,0,0,1], prevalence: '0.003% of population', severity: 'Complete' },
-    { id: 'achromatomaly', name: 'Achromatomaly', description: 'Partial color blindness (reduced color vision)', type: 'achromatomaly', matrix: [0.618,0.320,0.062,0,0.163,0.775,0.062,0,0.163,0.320,0.516,0,0,0,0,1], prevalence: '0.001% of population', severity: 'Partial' }
+    { id: 'none', name: 'Standard Vision', matrix: [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1] },
+    { id: 'protanopia', name: 'Protanopia (No Red)', matrix: [0.567,0.433,0,0,0.558,0.442,0,0,0,0.242,0.758,0,0,0,0,1] },
+    { id: 'deuteranopia', name: 'Deuteranopia (No Green)', matrix: [0.625,0.375,0,0,0.7,0.3,0,0,0,0.3,0.7,0,0,0,0,1] },
+    { id: 'tritanopia', name: 'Tritanopia (No Blue)', matrix: [0.95,0.05,0,0,0,0.433,0.567,0,0,0.475,0.525,0,0,0,0,1] },
+    { id: 'achromatopsia', name: 'Achromatopsia (Monochrome)', matrix: [0.299,0.587,0.114,0,0.299,0.587,0.114,0,0.299,0.587,0.114,0,0,0,0,1] }
   ];
 
   const textureList = [
-    { id: 'none', name: 'Matte', description: 'Solid color only', icon: '🟦' },
-    { id: 'wood', name: 'Timber', description: 'Natural wood texture', icon: '🪵' },
-    { id: 'marble', name: 'Stone', description: 'Elegant marble texture', icon: '🗿' },
-    { id: 'fabric', name: 'Textile', description: 'Soft fabric texture', icon: '🧵' },
-    { id: 'metal', name: 'Steel', description: 'Brushed metal texture', icon: '🔩' },
-    { id: 'leather', name: 'Leather', description: 'Genuine leather texture', icon: '🐄' },
-    { id: 'concrete', name: 'Concrete', description: 'Industrial concrete texture', icon: '🏗️' },
-    { id: 'glass', name: 'Glass', description: 'Transparent glass effect', icon: '🔮' }
+    { id: 'none', name: 'Matte Finish' },
+    { id: 'wood', name: 'Natural Timber' },
+    { id: 'marble', name: 'Polished Stone' },
+    { id: 'fabric', name: 'Woven Textile' },
+    { id: 'metal', name: 'Brushed Steel' },
+    { id: 'leather', name: 'Premium Leather' },
+    { id: 'concrete', name: 'Raw Concrete' },
+    { id: 'glass', name: 'Clear Glass' }
   ];
   
   const modelList = [
-    { id: 'desk', name: 'Studio Desk', icon: '🪑', normalizedScale: 0.8 },
-    { id: 'chair', name: 'Lounge Chair', icon: '💺', normalizedScale: 0.8 },
-    { id: 'wardrobe', name: 'Wardrobe', icon: '🚪', normalizedScale: 0.7 },
-    { id: 'bookshelf', name: 'Bookshelf', icon: '📚', normalizedScale: 0.9 },
-    { id: 'bed', name: 'Platform Bed', icon: '🛏️', normalizedScale: 0.5 },
-    { id: 'sofa', name: 'Sofa', icon: '🛋️', normalizedScale: 0.6 },
-    { id: 'table', name: 'Dining Table', icon: '🍽️', normalizedScale: 0.8 },
-    { id: 'cabinet', name: 'Cabinet', icon: '🥘', normalizedScale: 0.8 },
+    { id: 'desk', name: 'Studio Desk', normalizedScale: 0.8 },
+    { id: 'chair', name: 'Task Chair', normalizedScale: 0.8 },
+    { id: 'wardrobe', name: 'Wardrobe', normalizedScale: 0.7 },
+    { id: 'bookshelf', name: 'Bookshelf', normalizedScale: 0.9 },
+    { id: 'bed', name: 'Platform Bed', normalizedScale: 0.5 },
+    { id: 'sofa', name: 'Lounge Sofa', normalizedScale: 0.6 },
+    { id: 'table', name: 'Dining Table', normalizedScale: 0.8 },
+    { id: 'cabinet', name: 'Storage Cabinet', normalizedScale: 0.8 },
   ];
 
   // ========== EFFECTS & EVENT HANDLERS ==========
@@ -148,7 +135,6 @@ function App() {
     if (!colorData) return '#FFFFFF';
     if (typeof colorData === 'string') return colorData;
     if (typeof colorData === 'object' && colorData.hex) return colorData.hex;
-    if (typeof colorData === 'object' && colorData.color) return colorData.color;
     return '#FFFFFF';
   };
 
@@ -187,9 +173,9 @@ function App() {
       if (e.key === 'Escape' && selectedFurniture) { e.preventDefault(); handleDeselect(); return; }
       if (mode === 'layout' && selectedFurniture && transformControlsRef.current) {
         switch(e.key.toLowerCase()) {
-          case 'w': e.preventDefault(); transformControlsRef.current.setMode('translate'); setTransformMode('translate'); fireToast('Translate Tool', 'info'); break;
-          case 'e': e.preventDefault(); transformControlsRef.current.setMode('rotate'); setTransformMode('rotate'); fireToast('Rotate Tool', 'info'); break;
-          case 'r': e.preventDefault(); transformControlsRef.current.setMode('scale'); setTransformMode('scale'); fireToast('Scale Tool', 'info'); break;
+          case 'w': e.preventDefault(); transformControlsRef.current.setMode('translate'); setTransformMode('translate'); break;
+          case 'e': e.preventDefault(); transformControlsRef.current.setMode('rotate'); setTransformMode('rotate'); break;
+          case 'r': e.preventDefault(); transformControlsRef.current.setMode('scale'); setTransformMode('scale'); break;
           case 'delete': case 'backspace': e.preventDefault(); removeSelectedFurniture(); handleDeselect(); break;
         }
       }
@@ -267,7 +253,7 @@ function App() {
     setSelectedSection(null);
     handleDeselect();
     if (transformControlsRef.current) transformControlsRef.current.detach();
-    fireToast(`${newMode === 'customize' ? 'Studio' : 'Gallery'} Space`, 'info');
+    fireToast(`${newMode === 'customize' ? 'Studio' : 'Layout'} View`, 'info');
   };
 
   const handleFurnitureSelect = (furnitureId) => {
@@ -333,7 +319,7 @@ function App() {
     const newItem = { id: newId, type, position: [0, 0, 0], rotation: [0, 0, 0], scale: furnitureSizeScale[type] || 1, normalizedScale: getNormalizedScale(type), visible: true };
     setFurnitureItems(prev => [...prev, newItem]);
     handleFurnitureSelect(newId);
-    fireToast(`Placed ${type}`, 'success');
+    fireToast(`Added ${type}`, 'success');
     if (userType === 'cvd') announceToScreenReader(`Added ${type} to room`);
   };
 
@@ -342,7 +328,7 @@ function App() {
       const item = furnitureItems.find(f => f.id === selectedFurniture);
       setFurnitureItems(prev => prev.filter(item => item.id !== selectedFurniture));
       handleDeselect();
-      fireToast('Removed from scene', 'success');
+      fireToast('Removed from scene', 'info');
       if (userType === 'cvd') announceToScreenReader(`Removed ${item?.type}`);
     }
   };
@@ -358,136 +344,135 @@ function App() {
     setFurnitureItems(prev => prev.map(item => item.type === furnitureType ? { ...item, scale } : item));
   };
 
-  const resetLayout = () => { setFurnitureItems([]); handleDeselect(); fireToast('Gallery cleared', 'info'); };
+  const resetLayout = () => { setFurnitureItems([]); handleDeselect(); fireToast('Layout cleared', 'info'); };
   const getCurrentNormalizedScale = () => { return modelList.find(m => m.id === currentModel)?.normalizedScale || 0.8; };
   const handleFilterChange = (filterId) => { if (userType === 'normal') setCurrentFilter(filterId); };
 
-  // Feedback Submission Handler
-  const handleFeedbackSubmit = (e) => {
-    e.preventDefault();
-    // Here you would normally send the data to a backend (like Firebase or EmailJS)
-    fireToast('Thank you for your feedback!', 'success');
-    setShowFeedback(false);
-  };
-
   // ========== RENDER UI ==========
-  if (isLoading) return <div className="app-container" style={{justifyContent:'center', alignItems:'center'}}>Setting the scene...</div>;
+  if (isLoading) return <div className="app-container" style={{justifyContent:'center', alignItems:'center'}}>Initializing...</div>;
 
   return (
     <div className="app-container">
       <div id="sr-announcer" className="sr-only" aria-live="polite"></div>
       <ToastContainer toasts={toasts} />
 
-      {/* HEADER: Artsy Branding */}
-      <header className="app-header">
-        <div className="header-brand">
-          <h1>DesignEyes</h1>
+      {/* BACKGROUND: Full Bleed 3D Canvas */}
+      <section className="canvas-container">
+        <Canvas 
+          camera={mode === 'layout' ? { position: [7, 5, 7], fov: 50, up: [0, 1, 0] } : { position: [5, 5, 5], fov: 50 }}
+          onClick={handleCanvasClick}
+          onPointerMissed={handleDeselect}
+          style={{ cursor: mode === 'layout' ? (isTransforming ? (transformMode === 'translate' ? 'move' : transformMode === 'rotate' ? 'grab' : 'nwse-resize') : 'grab') : 'default' }}
+          onCreated={({ gl }) => { gl.domElement.style.touchAction = 'none'; }}
+        >
+          <ambientLight intensity={1.5} color="#ffffff" />
+          <directionalLight position={mode === 'layout' ? [15, 20, 15] : [10, 15, 10]} intensity={1.2} castShadow />
+          <directionalLight position={[-10, 10, -5]} intensity={0.6} color="#ffeb3b" />
+          <pointLight position={[0, 10, 0]} intensity={0.8} color="#ffffff" distance={30} decay={2} />
+          
+          {mode === 'customize' ? (
+            <FurnitureModel 
+              currentModel={currentModel} 
+              currentFilter={userType === 'normal' ? currentFilter : 'none'} 
+              currentTexture={currentTexture} 
+              selectedSection={selectedSection} 
+              sectionColors={getHexColorsForModel(sectionColors)} 
+              onSectionSelect={handleSectionSelect} 
+              normalizedScale={getCurrentNormalizedScale()} 
+              ref={modelRef} 
+              mode="customize" 
+            />
+          ) : (
+            <group>
+              <RoomLayout wallColor={wallColor} floorTexture={floorTexture} />
+              {furnitureItems.filter(item => item.visible).map((item) => {
+                const savedCustomizations = getHexCustomizationsForModel(item.type);
+                return (
+                  <group key={item.id} position={item.position} rotation={item.rotation} scale={[item.scale, item.scale, item.scale]}>
+                    <FurnitureModel 
+                      currentModel={item.type} 
+                      currentFilter={userType === 'normal' ? currentFilter : 'none'} 
+                      sectionColors={savedCustomizations} 
+                      normalizedScale={item.normalizedScale} 
+                      isSelected={selectedFurniture === item.id} 
+                      onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); handleFurnitureSelect(item.id); }} 
+                      mode="layout" 
+                    />
+                  </group>
+                );
+              })}
+
+              {selectedFurniture && (
+                <TransformControls 
+                  ref={transformControlsRef} 
+                  mode={transformMode} 
+                  onMouseDown={handleTransformStart} 
+                  onMouseUp={() => {}} 
+                  onChange={handleTransformChange} 
+                />
+              )}
+            </group>
+          )}
+
+          <OrbitControls ref={orbitControlsRef} makeDefault />
+          
+          {userType === 'normal' && currentFilter !== 'none' && (
+            <CVDPostProcessing filterType={currentFilter} filterMatrix={cvdSimulationFilters.find(f => f.id === currentFilter)?.matrix} />
+          )}
+        </Canvas>
+
+        {/* Floating Badges pinned to the bottom left of the Canvas layer */}
+        <div className="canvas-overlay-badges">
+          <span className="badge">{mode === 'layout' ? 'Layout Mode' : 'Studio Mode'}</span>
+          
+          {mode === 'customize' && <span className="badge" style={{background: 'var(--primary)', color: 'var(--bg-color)'}}>{modelList.find(m => m.id === currentModel)?.name}</span>}
+          {mode === 'customize' && userType === 'normal' && currentFilter !== 'none' && <span className="badge" style={{background: 'var(--danger)', color: '#fff'}}>Lens: {cvdSimulationFilters.find(f => f.id === currentFilter)?.name}</span>}
+          
+          {mode === 'layout' && selectedFurniture && <span className="badge" style={{background: 'var(--text-main)', color: 'var(--bg-color)'}}>Editing: {furnitureItems.find(f => f.id === selectedFurniture)?.type}</span>}
         </div>
-        
-        <div className="header-controls">
-          {/* Workspace Mode */}
-          <div style={{ display: 'flex', background: 'var(--bg-color)', borderRadius: '50px', padding: '4px', border: 'var(--border-fine)' }}>
-             <button className={`btn ${mode === 'customize' ? 'btn-primary' : ''}`} style={{border: 'none'}} onClick={() => handleModeChange('customize')} aria-pressed={mode === 'customize'}>✨ Studio</button>
-             <button className={`btn ${mode === 'layout' ? 'btn-primary' : ''}`} style={{border: 'none'}} onClick={() => handleModeChange('layout')} aria-pressed={mode === 'layout'}>🏛️ Gallery</button>
-          </div>
+      </section>
 
-          <div style={{width: '1px', height: '24px', background: 'var(--border-fine)', margin: '0 0.5rem'}}></div>
+      {/* FOREGROUND: Floating UI Panels */}
+      <div className="ui-layer">
+        {/* Top Left Header */}
+        <div>
+          <header className="app-header">
+            <div className="header-brand">
+              <h1>DesignEyes</h1>
+            </div>
+            
+            <div className="header-controls">
+              {/* Workspace Mode */}
+              <div style={{ display: 'flex', background: 'var(--border-fine)', borderRadius: '99px', padding: '4px' }}>
+                 <button className={`btn ${mode === 'customize' ? 'btn-primary' : ''}`} style={{border: 'none'}} onClick={() => handleModeChange('customize')} aria-pressed={mode === 'customize'}>Studio</button>
+                 <button className={`btn ${mode === 'layout' ? 'btn-primary' : ''}`} style={{border: 'none'}} onClick={() => handleModeChange('layout')} aria-pressed={mode === 'layout'}>Layout</button>
+              </div>
 
-          {/* User Type */}
-          <Tooltip text={userType === 'normal' ? "Switch to Accessible CVD Tools" : "Switch to Standard Designer Tools"}>
-             <button className={`btn ${userType === 'cvd' ? 'btn-primary' : ''}`} onClick={() => handleUserTypeChange(userType === 'normal' ? 'cvd' : 'normal')} aria-pressed={userType === 'cvd'}>
-               {userType === 'normal' ? '👁️ Standard' : '👓 Inclusive'}
-             </button>
-          </Tooltip>
+              <div style={{width: '1px', height: '24px', background: 'var(--border-fine)', margin: '0 0.5rem'}}></div>
 
-          {/* High Contrast */}
-          <Tooltip text="High Contrast Overlay">
-             <button className={`btn ${highContrast ? 'btn-primary' : ''}`} onClick={() => setHighContrast(!highContrast)} aria-pressed={highContrast}>🌓</button>
-          </Tooltip>
+              {/* User Type */}
+              <Tooltip text={userType === 'normal' ? "Switch to Accessible CVD Tools" : "Switch to Standard Designer Tools"}>
+                 <button className={`btn ${userType === 'cvd' ? 'btn-primary' : ''}`} onClick={() => handleUserTypeChange(userType === 'normal' ? 'cvd' : 'normal')} aria-pressed={userType === 'cvd'}>
+                   {userType === 'normal' ? 'Standard' : 'Inclusive'}
+                 </button>
+              </Tooltip>
 
-          {/* Feedback Button */}
-          <button className="btn" style={{ marginLeft: '0.5rem' }} onClick={() => setShowFeedback(true)}>📝 Feedback</button>
+              {/* High Contrast */}
+              <Tooltip text="High Contrast Overlay">
+                 <button className={`btn ${highContrast ? 'btn-primary' : ''}`} onClick={() => setHighContrast(!highContrast)} aria-pressed={highContrast}>Contrast</button>
+              </Tooltip>
+
+              <button 
+                className="btn" 
+                onClick={() => window.open('YOUR_GOOGLE_FORM_URL_HERE', '_blank', 'noopener,noreferrer')}
+              >
+                Feedback
+              </button>
+            </div>
+          </header>
         </div>
-      </header>
 
-      <main className="workspace">
-        {/* LEFT: Framed 3D Canvas */}
-        <section className="canvas-container">
-          <div className="canvas-overlay-badges">
-            <span className="badge">{mode === 'layout' ? 'Gallery View' : 'Studio View'}</span>
-            
-            {mode === 'customize' && <span className="badge" style={{background: 'var(--primary)', color: '#fff', border: 'none'}}>{modelList.find(m => m.id === currentModel)?.name}</span>}
-            {mode === 'customize' && userType === 'normal' && currentFilter !== 'none' && <span className="badge" style={{background: '#d9534f', color: '#fff', border: 'none'}}>Lens: {cvdSimulationFilters.find(f => f.id === currentFilter)?.name}</span>}
-            
-            {mode === 'layout' && selectedFurniture && <span className="badge" style={{background: 'var(--text-main)', color: 'var(--surface)', border: 'none'}}>Framing: {furnitureItems.find(f => f.id === selectedFurniture)?.type}</span>}
-          </div>
-
-          <Canvas 
-            camera={mode === 'layout' ? { position: [7, 5, 7], fov: 50, up: [0, 1, 0] } : { position: [5, 5, 5], fov: 50 }}
-            onClick={handleCanvasClick}
-            onPointerMissed={handleDeselect}
-            style={{ cursor: mode === 'layout' ? (isTransforming ? (transformMode === 'translate' ? 'move' : transformMode === 'rotate' ? 'grab' : 'nwse-resize') : 'grab') : 'default' }}
-            onCreated={({ gl }) => { gl.domElement.style.touchAction = 'none'; }}
-          >
-            <ambientLight intensity={1.5} color="#ffffff" />
-            <directionalLight position={mode === 'layout' ? [15, 20, 15] : [10, 15, 10]} intensity={1.2} castShadow />
-            <directionalLight position={[-10, 10, -5]} intensity={0.6} color="#ffeb3b" />
-            <pointLight position={[0, 10, 0]} intensity={0.8} color="#ffffff" distance={30} decay={2} />
-            <hemisphereLight skyColor="#ffffff" groundColor="#808080" intensity={0.8} />
-
-            {mode === 'customize' ? (
-              <FurnitureModel 
-                currentModel={currentModel} 
-                currentFilter={userType === 'normal' ? currentFilter : 'none'} 
-                currentTexture={currentTexture} 
-                selectedSection={selectedSection} 
-                sectionColors={getHexColorsForModel(sectionColors)} 
-                onSectionSelect={handleSectionSelect} 
-                normalizedScale={getCurrentNormalizedScale()} 
-                ref={modelRef} 
-                mode="customize" 
-              />
-            ) : (
-              <group>
-                <RoomLayout wallColor={wallColor} floorTexture={floorTexture} />
-                {furnitureItems.filter(item => item.visible).map((item) => {
-                  const savedCustomizations = getHexCustomizationsForModel(item.type);
-                  return (
-                    <group key={item.id} position={item.position} rotation={item.rotation} scale={[item.scale, item.scale, item.scale]}>
-                      <FurnitureModel 
-                        currentModel={item.type} 
-                        currentFilter={userType === 'normal' ? currentFilter : 'none'} 
-                        sectionColors={savedCustomizations} 
-                        normalizedScale={item.normalizedScale} 
-                        isSelected={selectedFurniture === item.id} 
-                        onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); handleFurnitureSelect(item.id); }} 
-                        mode="layout" 
-                      />
-                    </group>
-                  );
-                })}
-
-                {selectedFurniture && (
-                  <TransformControls 
-                    ref={transformControlsRef} 
-                    mode={transformMode} 
-                    onMouseDown={handleTransformStart} 
-                    onMouseUp={() => {}} 
-                    onChange={handleTransformChange} 
-                  />
-                )}
-              </group>
-            )}
-
-            <OrbitControls ref={orbitControlsRef} makeDefault />
-            
-            {userType === 'normal' && currentFilter !== 'none' && (
-              <CVDPostProcessing filterType={currentFilter} filterMatrix={cvdSimulationFilters.find(f => f.id === currentFilter)?.matrix} />
-            )}
-          </Canvas>
-        </section>
-
-        {/* RIGHT: Artsy Arched Sidebar */}
+        {/* Right Sidebar */}
         <aside className="sidebar">
           {mode === 'customize' ? (
             <>
@@ -497,8 +482,7 @@ function App() {
                 <div className="grid-2col">
                   {modelList.map(m => (
                     <button key={m.id} className={`selectable-card ${currentModel === m.id ? 'active' : ''}`} onClick={() => handleModelChange(m.id)}>
-                      <span style={{fontSize: '1.8rem'}}>{m.icon}</span>
-                      <strong>{m.name}</strong>
+                      {m.name}
                     </button>
                   ))}
                 </div>
@@ -506,12 +490,11 @@ function App() {
 
               {/* 2. Coloring */}
               <div className="control-group animate-fade-in" style={{animationDelay: '0.1s'}}>
-                <h3>Pigments</h3>
-                {!selectedSection && <p style={{fontSize:'0.85rem', color:'#d9534f', fontStyle: 'italic'}}>Highlight a form on the canvas to paint.</p>}
+                <h3>Materials & Colors</h3>
+                {!selectedSection && <p style={{fontSize:'0.85rem', color:'var(--text-muted)'}}>Select a part on the 3D model to apply color.</p>}
+                {selectedSection && <p style={{fontSize:'0.85rem', color:'var(--primary)'}}>Selected: <strong>{selectedSection}</strong></p>}
                 
-                {selectedSection && <p style={{fontSize:'0.9rem'}}>Subject: <strong>{selectedSection}</strong></p>}
-                
-                <div className="grid-4col">
+                <div className="grid-4col" style={{marginTop: '0.5rem'}}>
                   {userType === 'cvd' ? 
                      cvdColorPalette.map(c => (
                        <Tooltip key={c.hex} text={c.name}>
@@ -524,10 +507,9 @@ function App() {
                   }
                 </div>
 
-                <h3 style={{marginTop: '1.5rem'}}>Finishes</h3>
-                <div className="grid-2col">
+                <div className="grid-2col" style={{marginTop: '1rem'}}>
                   {textureList.map(t => (
-                    <button key={t.id} className={`btn ${currentTexture === t.id ? 'btn-primary' : ''}`} style={{justifyContent:'center'}} onClick={() => setCurrentTexture(t.id)}>
+                    <button key={t.id} className={`btn ${currentTexture === t.id ? 'btn-primary' : ''}`} onClick={() => setCurrentTexture(t.id)}>
                       {t.name}
                     </button>
                   ))}
@@ -538,62 +520,54 @@ function App() {
               {userType === 'normal' && (
                 <div className="control-group animate-fade-in" style={{animationDelay: '0.2s'}}>
                   <h3>Vision Lenses</h3>
-                  <select className="btn" style={{width: '100%', textAlign: 'left', padding: '0.8rem', fontFamily: 'Lora'}} value={currentFilter} onChange={(e) => handleFilterChange(e.target.value)}>
+                  <select className="btn" style={{width: '100%', textAlign: 'left', padding: '0.8rem'}} value={currentFilter} onChange={(e) => handleFilterChange(e.target.value)}>
                     {cvdSimulationFilters.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                   </select>
                 </div>
               )}
 
               {/* Quick Actions */}
-              <div className="control-group animate-fade-in" style={{animationDelay: '0.3s'}}>
-                <div className="grid-2col" style={{marginTop: '1rem'}}>
-                  <button className="btn btn-danger" style={{justifyContent: 'center'}} onClick={resetAllCustomizations}>Scrub Canvas</button>
-                  <button className="btn" style={{justifyContent: 'center'}} onClick={resetToDefault}>Clear Lenses</button>
+              <div className="control-group animate-fade-in" style={{animationDelay: '0.3s', marginTop: 'auto'}}>
+                <div className="grid-2col">
+                  <button className="btn btn-danger" onClick={resetAllCustomizations}>Clear All</button>
+                  <button className="btn" onClick={resetToDefault}>Reset Lens</button>
                 </div>
               </div>
             </>
           ) : (
              <div className="control-group animate-fade-in">
-               <h3>Curate Space</h3>
-               
-               <p style={{fontSize: '0.9rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Bring forms into the gallery:</p>
-               <div className="grid-3col">
+               <h3>Add Furniture</h3>
+               <div className="grid-2col">
                  {modelList.map(m => (
-                   <button key={m.id} className="btn" style={{justifyContent: 'center', fontSize:'0.8rem', padding:'0.6rem'}} onClick={() => addFurnitureItem(m.id)}>
+                   <button key={m.id} className="btn" style={{fontSize:'0.8rem'}} onClick={() => addFurnitureItem(m.id)}>
                      + {m.name}
                    </button>
                  ))}
                </div>
 
                {selectedFurniture && (
-                 <>
-                   <p style={{fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Spatial Transform:</p>
+                 <div style={{background: 'var(--surface-solid)', padding: '1rem', borderRadius: 'var(--radius-card)', border: 'var(--border-fine)', marginTop: '1rem'}}>
+                   <h3 style={{borderBottom: 'none', padding: 0, marginBottom: '0.75rem'}}>Transform</h3>
                    <div style={{display: 'flex', gap: '0.5rem'}}>
-                      <button className={`btn ${transformMode === 'translate' ? 'btn-primary' : ''}`} style={{flex: 1, padding: '0.5rem', justifyContent: 'center'}} onClick={() => { setTransformMode('translate'); if(transformControlsRef.current) transformControlsRef.current.setMode('translate');}}>Slide</button>
-                      <button className={`btn ${transformMode === 'rotate' ? 'btn-primary' : ''}`} style={{flex: 1, padding: '0.5rem', justifyContent: 'center'}} onClick={() => { setTransformMode('rotate'); if(transformControlsRef.current) transformControlsRef.current.setMode('rotate');}}>Turn</button>
-                      <button className={`btn ${transformMode === 'scale' ? 'btn-primary' : ''}`} style={{flex: 1, padding: '0.5rem', justifyContent: 'center'}} onClick={() => { setTransformMode('scale'); if(transformControlsRef.current) transformControlsRef.current.setMode('scale');}}>Resize</button>
+                      <button className={`btn ${transformMode === 'translate' ? 'btn-primary' : ''}`} style={{flex: 1}} onClick={() => { setTransformMode('translate'); if(transformControlsRef.current) transformControlsRef.current.setMode('translate');}}>Move</button>
+                      <button className={`btn ${transformMode === 'rotate' ? 'btn-primary' : ''}`} style={{flex: 1}} onClick={() => { setTransformMode('rotate'); if(transformControlsRef.current) transformControlsRef.current.setMode('rotate');}}>Rotate</button>
                    </div>
                    
-                   <p style={{fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Fine-tune Size:</p>
+                   <h3 style={{borderBottom: 'none', padding: 0, margin: '1rem 0 0.5rem 0'}}>Scale</h3>
                    <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-                     <button className="btn" style={{flex: 1, justifyContent: 'center'}} onClick={() => adjustSelectedFurnitureScale(-0.1)} aria-label="Decrease size">
-                       - Shrink
-                     </button>
-                     <span style={{fontSize: '0.95rem', fontWeight: 'bold', width: '60px', textAlign: 'center'}}>
+                     <button className="btn" style={{flex: 1}} onClick={() => adjustSelectedFurnitureScale(-0.1)} aria-label="Decrease size">-</button>
+                     <span style={{fontSize: '0.85rem', fontWeight: 500, width: '40px', textAlign: 'center'}}>
                        {Math.round((furnitureItems.find(f => f.id === selectedFurniture)?.scale || 1) * 100)}%
                      </span>
-                     <button className="btn" style={{flex: 1, justifyContent: 'center'}} onClick={() => adjustSelectedFurnitureScale(0.1)} aria-label="Increase size">
-                       + Grow
-                     </button>
+                     <button className="btn" style={{flex: 1}} onClick={() => adjustSelectedFurnitureScale(0.1)} aria-label="Increase size">+</button>
                    </div>
-                 </>
+                 </div>
                )}
                
                {/* Room Environment Finishes */}
-               <h3 style={{marginTop: '1.5rem', borderBottom: '1px solid var(--border-fine)', paddingBottom: '0.5rem'}}>Room Finishes</h3>
-               
+               <h3 style={{marginTop: '1.5rem'}}>Room Finishes</h3>
                <div>
-                 <p style={{fontSize: '0.9rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Wall Paint:</p>
+                 <p style={{fontSize: '0.8rem', marginBottom: '0.5rem', color: 'var(--text-muted)'}}>Wall Paint</p>
                  <div className="grid-4col">
                    {sectionColorPalette.slice(0, 8).map(hex => (
                      <Tooltip key={`wall-${hex}`} text="Apply Wall Color">
@@ -608,13 +582,13 @@ function App() {
                </div>
 
                <div>
-                 <p style={{fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Floor Material:</p>
+                 <p style={{fontSize: '0.8rem', marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-muted)'}}>Floor Material</p>
                  <div className="grid-2col">
                    {textureList.map(t => (
                      <button 
                        key={`floor-${t.id}`} 
                        className={`btn ${floorTexture === t.id ? 'btn-primary' : ''}`} 
-                       style={{justifyContent:'center', fontSize: '0.8rem'}} 
+                       style={{fontSize: '0.8rem'}} 
                        onClick={() => setFloorTexture(t.id)}
                      >
                        {t.id === 'none' ? 'Default Floor' : t.name}
@@ -625,14 +599,14 @@ function App() {
 
                {furnitureItems.length > 0 && (
                  <>
-                   <p style={{fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Current Exhibition:</p>
-                   <div style={{maxHeight: '150px', overflowY: 'auto', paddingRight: '0.5rem'}}>
+                   <h3 style={{marginTop: '1.5rem'}}>Items in Room</h3>
+                   <div style={{maxHeight: '120px', overflowY: 'auto'}}>
                      {furnitureItems.map(item => (
                        <div key={item.id} className={`list-item ${selectedFurniture === item.id ? 'selected' : ''}`} onClick={() => handleFurnitureSelect(item.id)}>
-                         <span style={{textTransform: 'capitalize', fontSize: '0.9rem', fontWeight: 600}}>{item.type}</span>
+                         <span style={{textTransform: 'capitalize', fontSize: '0.85rem', fontWeight: 500}}>{item.type}</span>
                          <div style={{display: 'flex', gap: '0.5rem'}}>
-                           <button className="btn" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem'}} onClick={(e) => { e.stopPropagation(); toggleFurnitureVisibility(item.id); }}>{item.visible ? '👁️' : '🚫'}</button>
-                           <button className="btn btn-danger" style={{padding: '0.2rem 0.6rem', fontSize: '0.8rem'}} onClick={(e) => { e.stopPropagation(); setSelectedFurniture(item.id); removeSelectedFurniture(); }}>X</button>
+                           <button className="btn" style={{padding: '0.2rem 0.5rem'}} onClick={(e) => { e.stopPropagation(); toggleFurnitureVisibility(item.id); }}>{item.visible ? 'Hide' : 'Show'}</button>
+                           <button className="btn btn-danger" style={{padding: '0.2rem 0.5rem'}} onClick={(e) => { e.stopPropagation(); setSelectedFurniture(item.id); removeSelectedFurniture(); }}>Del</button>
                          </div>
                        </div>
                      ))}
@@ -640,70 +614,13 @@ function App() {
                  </>
                )}
 
-               <p style={{fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Gallery Architecture:</p>
-               <div className="grid-2col">
-                  <button className="btn" style={{justifyContent: 'center'}} onClick={() => modelList.forEach(m => updateFurnitureSizeScale(m.id, 0.6))}>Intimate Room</button>
-                  <button className="btn" style={{justifyContent: 'center'}} onClick={() => modelList.forEach(m => updateFurnitureSizeScale(m.id, 1.2))}>Grand Hall</button>
+               <div style={{marginTop: 'auto'}}>
+                 <button className="btn btn-danger" style={{width: '100%'}} onClick={resetLayout}>Clear Layout</button>
                </div>
-               <button className="btn btn-danger" style={{marginTop: '1rem', justifyContent: 'center', width: '100%'}} onClick={resetLayout}>Dismantle Exhibition</button>
              </div>
           )}
         </aside>
-      </main>
-
-      {/* =========================================
-          FEEDBACK MODAL OVERLAY
-          ========================================= */}
-      {showFeedback && (
-        <div className="modal-overlay" onClick={() => setShowFeedback(false)}>
-          {/* Prevent clicks inside the modal from closing it */}
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
-              <h2 style={{margin: 0, fontFamily: 'Lora'}}>Share Your Thoughts</h2>
-              <button className="btn" style={{padding: '0.3rem 0.6rem'}} onClick={() => setShowFeedback(false)}>✕</button>
-            </div>
-            
-            <form onSubmit={handleFeedbackSubmit}>
-              <div className="form-group">
-                <label>Name</label>
-                <input type="text" className="form-control" placeholder="Your Name" required />
-              </div>
-              
-              <div className="form-group">
-                <label>Role</label>
-                <select className="form-control" required>
-                  <option value="">Select your role...</option>
-                  <option value="designer">Designer / Architect</option>
-                  <option value="developer">Developer</option>
-                  <option value="user_cvd">User with CVD</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>How easy was the tool to use?</label>
-                <div style={{display: 'flex', gap: '1rem'}}>
-                  {[1, 2, 3, 4, 5].map(num => (
-                    <label key={num} style={{display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'normal'}}>
-                      <input type="radio" name="rating" value={num} required /> {num}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Feedback & Suggestions</label>
-                <textarea className="form-control" rows="4" placeholder="What did you like? What could be better?" required></textarea>
-              </div>
-
-              <div style={{display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem'}}>
-                <button type="button" className="btn" onClick={() => setShowFeedback(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Submit Feedback</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
