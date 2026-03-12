@@ -2,10 +2,11 @@
  * Main application component for 3D Furniture CVD Accessibility Simulator
  * 
  * Features:
- * - Two modes: Customize (color individual furniture parts) and Layout (arrange furniture in room)
- * - Scientific CVD (Color Vision Deficiency) simulation filters
+ * - Two user modes: CVD Mode (accessible with color names) and Normal Mode (with CVD simulation)
+ * - Two workspace modes: Customize (color individual furniture parts) and Layout (arrange furniture in room)
+ * - Scientific CVD (Color Vision Deficiency) simulation filters (Normal mode only)
  * - Real-time 3D furniture manipulation with Three.js
- * - Interactive color customization for furniture sections
+ * - Interactive color customization with color names for CVD mode
  * - Furniture layout with drag & drop, rotation, and scaling
  * - Texture application (wood, marble, fabric, metal, etc.)
  * - Post-processing effects for CVD simulation
@@ -40,6 +41,9 @@ function App() {
   const [selectedFurniture, setSelectedFurniture] = useState(null);
   const [transformMode, setTransformMode] = useState('translate');
   
+  // NEW: User type mode (cvd or normal)
+  const [userType, setUserType] = useState('normal'); // 'cvd' or 'normal'
+  
   // Store model customizations per model type
   const [modelCustomizations, setModelCustomizations] = useState({
     'desk': {},
@@ -51,7 +55,8 @@ function App() {
     'table': {},
     'cabinet': {},
   });
-   // Furniture items currently in the room (layout mode)
+  
+  // Furniture items currently in the room (layout mode)
   const [furnitureSizeScale, setFurnitureSizeScale] = useState({
     'desk': 1.0,
     'chair': 1.0,
@@ -74,12 +79,32 @@ function App() {
   // State to track if transform controls are active
   const [isTransforming, setIsTransforming] = useState(false);
   
-  // Section-specific color palette
+  // Section-specific color palette (for normal mode)
   const sectionColorPalette = [
     '#2764AE', '#E0DFDA', '#F28C28', '#F1C40F', '#333333', '#DDDDDD', 
     '#A6764D', '#F5F5F5', '#8A2BE2', '#FF6B6B', '#4ECDC4', '#45B7D1',
     '#D4A76A', '#3C2F2F', '#E1C699', '#FFFFFF', '#808080', '#2196F3',
     '#4CAF50', '#F44336'
+  ];
+
+  // CVD-friendly color palette (high contrast, distinct names)
+  const cvdColorPalette = [
+    { color: '#000000', name: 'Black', hex: '#000000', description: 'Deep black' },
+    { color: '#FFFFFF', name: 'White', hex: '#FFFFFF', description: 'Pure white' },
+    { color: '#FF0000', name: 'Red', hex: '#FF0000', description: 'Bright red' },
+    { color: '#0000FF', name: 'Blue', hex: '#0000FF', description: 'Deep blue' },
+    { color: '#FFFF00', name: 'Yellow', hex: '#FFFF00', description: 'Bright yellow' },
+    { color: '#008000', name: 'Green', hex: '#008000', description: 'Forest green' },
+    { color: '#FFA500', name: 'Orange', hex: '#FFA500', description: 'Warm orange' },
+    { color: '#800080', name: 'Purple', hex: '#800080', description: 'Royal purple' },
+    { color: '#A52A2A', name: 'Brown', hex: '#A52A2A', description: 'Warm brown' },
+    { color: '#808080', name: 'Gray', hex: '#808080', description: 'Medium gray' },
+    { color: '#FFC0CB', name: 'Pink', hex: '#FFC0CB', description: 'Soft pink' },
+    { color: '#00FFFF', name: 'Cyan', hex: '#00FFFF', description: 'Bright cyan' },
+    { color: '#FF00FF', name: 'Magenta', hex: '#FF00FF', description: 'Vibrant magenta' },
+    { color: '#C0C0C0', name: 'Silver', hex: '#C0C0C0', description: 'Metallic silver' },
+    { color: '#FFD700', name: 'Gold', hex: '#FFD700', description: 'Rich gold' },
+    { color: '#4B0082', name: 'Indigo', hex: '#4B0082', description: 'Deep indigo' },
   ];
 
   useEffect(() => {
@@ -235,7 +260,8 @@ function App() {
     { id: 'concrete', name: 'Concrete', description: 'Industrial concrete texture', icon: '🏗️' },
     { id: 'glass', name: 'Glass', description: 'Transparent glass effect', icon: '🔮' }
   ];
-// ========== FURNITURE MODELS ==========
+  
+  // ========== FURNITURE MODELS ==========
   const modelList = [
     { id: 'desk', name: 'Desk', icon: '🪑', normalizedScale: 0.8 },
     { id: 'chair', name: 'Chair', icon: '💺', normalizedScale: 0.8 },
@@ -246,6 +272,79 @@ function App() {
     { id: 'table', name: 'Table', icon: '🍽️', normalizedScale: 0.8 },
     { id: 'cabinet', name: 'Cabinet', icon: '🥘', normalizedScale: 0.8 },
   ];
+
+  // ========== HELPER FUNCTIONS ==========
+  
+  // Get color hex from color data (handles both string and object formats)
+  const getColorHex = (colorData) => {
+    if (!colorData) return '#FFFFFF';
+    
+    // If it's a string (old format or normal mode)
+    if (typeof colorData === 'string') {
+      return colorData;
+    }
+    
+    // If it's an object with hex property (CVD mode)
+    if (typeof colorData === 'object' && colorData.hex) {
+      return colorData.hex;
+    }
+    
+    // If it's an object with color property (from palette)
+    if (typeof colorData === 'object' && colorData.color) {
+      return colorData.color;
+    }
+    
+    return '#FFFFFF';
+  };
+
+  // Get color name from color data
+  const getColorName = (colorData) => {
+    if (!colorData) return 'Default';
+    
+    // If it's a string, try to find in CVD palette
+    if (typeof colorData === 'string') {
+      const cvdColor = cvdColorPalette.find(c => c.color === colorData);
+      return cvdColor ? cvdColor.name : 'Custom Color';
+    }
+    
+    // If it's an object with name property
+    if (typeof colorData === 'object' && colorData.name) {
+      return colorData.name;
+    }
+    
+    return 'Custom Color';
+  };
+
+  // Convert sectionColors to format expected by ModelLoader (just hex values)
+  const getHexColorsForModel = (colors) => {
+    const hexColors = {};
+    Object.entries(colors).forEach(([section, colorData]) => {
+      hexColors[section] = getColorHex(colorData);
+    });
+    return hexColors;
+  };
+
+  // Get saved customizations for a model type (returns full color data for UI)
+  const getCustomizationsForModel = (modelType) => {
+    return modelCustomizations[modelType] || {};
+  };
+
+  // Get saved customizations for a model type (returns hex values for model)
+  const getHexCustomizationsForModel = (modelType) => {
+    const savedColors = modelCustomizations[modelType] || {};
+    return getHexColorsForModel(savedColors);
+  };
+
+  // Screen reader announcement
+  const announceToScreenReader = (message) => {
+    const announcer = document.getElementById('sr-announcer');
+    if (announcer) {
+      announcer.textContent = message;
+      setTimeout(() => {
+        announcer.textContent = '';
+      }, 1000);
+    }
+  };
 
   // ========== KEYBOARD SHORTCUTS ==========
   /**
@@ -318,20 +417,44 @@ function App() {
     }
   }, [mode, isTransforming, transformMode]);
 
+  // ========== EVENT HANDLERS ==========
+  
+  // Handle user type change
+  const handleUserTypeChange = (type) => {
+    setUserType(type);
+    if (type === 'cvd') {
+      // Disable CVD simulation filters in CVD mode
+      setCurrentFilter('none');
+    }
+    
+    // Announce mode change
+    announceToScreenReader(`Switched to ${type === 'cvd' ? 'color blind' : 'normal'} mode`);
+  };
+
   // Function to handle section selection (only in customize mode)
   const handleSectionSelect = (sectionName) => {
     if (mode === 'customize') {
       setSelectedSection(sectionName);
+      
+      if (userType === 'cvd') {
+        announceToScreenReader(`Selected ${sectionName}`);
+      }
     }
   };
 
   // Function to apply color to selected section
-  const applyColorToSection = (color) => {
+  const applyColorToSection = (color, colorName) => {
     if (!selectedSection || mode !== 'customize') return;
+    
+    // Store both color value and name for CVD mode
+    const colorData = {
+      hex: typeof color === 'string' ? color : color.color,
+      name: colorName || getColorName(color)
+    };
     
     const newSectionColors = {
       ...sectionColors,
-      [selectedSection]: color
+      [selectedSection]: colorData
     };
     
     setSectionColors(newSectionColors);
@@ -341,8 +464,14 @@ function App() {
       [currentModel]: newSectionColors
     }));
     
+    // Apply color to model using just the hex value
     if (modelRef.current && modelRef.current.applyColorToSection) {
-      modelRef.current.applyColorToSection(selectedSection, color);
+      modelRef.current.applyColorToSection(selectedSection, colorData.hex);
+    }
+    
+    // Announce color selection for screen readers
+    if (userType === 'cvd') {
+      announceToScreenReader(`Applied ${colorData.name} to ${selectedSection}`);
     }
   };
 
@@ -358,7 +487,11 @@ function App() {
         [currentModel]: {}
       }));
       
-      alert(`Reset ${resetCount} customizations`);
+      const message = `Reset ${resetCount} customizations`;
+      alert(message);
+      if (userType === 'cvd') {
+        announceToScreenReader(message);
+      }
     }
   };
 
@@ -386,6 +519,10 @@ function App() {
     
     const savedCustomizations = modelCustomizations[modelId] || {};
     setSectionColors(savedCustomizations);
+    
+    if (userType === 'cvd') {
+      announceToScreenReader(`Switched to ${modelList.find(m => m.id === modelId)?.name}`);
+    }
   };
 
   // Handle mode change
@@ -415,6 +552,11 @@ function App() {
       // Disable orbit controls when transforming
       if (orbitControlsRef.current) {
         orbitControlsRef.current.enabled = false;
+      }
+      
+      if (userType === 'cvd') {
+        const item = furnitureItems.find(f => f.id === furnitureId);
+        announceToScreenReader(`Selected ${item?.type}`);
       }
     }
   };
@@ -522,13 +664,22 @@ function App() {
     
     setFurnitureItems(prev => [...prev, newItem]);
     handleFurnitureSelect(newId); // Select the new item
+    
+    if (userType === 'cvd') {
+      announceToScreenReader(`Added ${type} to room`);
+    }
   };
 
   // Remove selected furniture
   const removeSelectedFurniture = () => {
     if (selectedFurniture) {
+      const item = furnitureItems.find(f => f.id === selectedFurniture);
       setFurnitureItems(prev => prev.filter(item => item.id !== selectedFurniture));
       handleDeselect();
+      
+      if (userType === 'cvd') {
+        announceToScreenReader(`Removed ${item?.type}`);
+      }
     }
   };
 
@@ -569,20 +720,17 @@ function App() {
     return model?.normalizedScale || 0.8;
   };
 
-  // Get saved customizations for a model type
-  const getCustomizationsForModel = (modelType) => {
-    return modelCustomizations[modelType] || {};
-  };
-
   // Clear room
   const clearRoom = () => {
     setFurnitureItems([]);
     handleDeselect();
   };
 
-  // Handle filter change
+  // Handle filter change (only in normal mode)
   const handleFilterChange = (filterId) => {
-    setCurrentFilter(filterId);
+    if (userType === 'normal') {
+      setCurrentFilter(filterId);
+    }
   };
 
   const getCurrentFilterDescription = () => {
@@ -606,17 +754,25 @@ function App() {
 
   return (
     <div className="App">
+      {/* Screen reader announcer (hidden but accessible) */}
+      <div id="sr-announcer" className="sr-only" aria-live="polite"></div>
+      
       <header className="app-header">
         <div className="header-left">
-          <h1>3D Furniture CVD Accessibility Simulator</h1>
+          <h1>3D Furniture {userType === 'cvd' ? 'Accessibility' : 'Design'} Studio</h1>
           <div className="current-selection">
             <span className="current-mode">Mode: {mode === 'layout' ? 'Room Layout' : 'Customize'}</span>
+            <span className="user-type-badge" data-type={userType}>
+              {userType === 'cvd' ? '👁️ CVD Mode' : '👓 Normal Mode'}
+            </span>
             {mode === 'customize' && (
               <>
                 <span className="current-model">Model: {modelList.find(m => m.id === currentModel)?.name}</span>
-                <span className="current-filter">
-                  CVD Filter: {cvdSimulationFilters.find(f => f.id === currentFilter)?.name}
-                </span>
+                {userType === 'normal' && (
+                  <span className="current-filter">
+                    Filter: {cvdSimulationFilters.find(f => f.id === currentFilter)?.name}
+                  </span>
+                )}
                 <span className="customization-count">
                   Customizations: {Object.keys(sectionColors).length}
                 </span>
@@ -640,26 +796,43 @@ function App() {
           </div>
         </div>
         <div className="header-right">
+          <div className="user-type-selector">
+            <button 
+              className={`user-type-button ${userType === 'normal' ? 'active' : ''}`}
+              onClick={() => handleUserTypeChange('normal')}
+              aria-label="Switch to normal mode"
+            >
+              👓 Normal Mode
+            </button>
+            <button 
+              className={`user-type-button ${userType === 'cvd' ? 'active' : ''}`}
+              onClick={() => handleUserTypeChange('cvd')}
+              aria-label="Switch to color blind accessible mode"
+            >
+              👁️ CVD Mode
+            </button>
+          </div>
           <div className="mode-selector">
             <button 
               className={`mode-button ${mode === 'customize' ? 'active' : ''}`}
               onClick={() => handleModeChange('customize')}
             >
-              🎨 Customize Mode
+              🎨 Customize
             </button>
             <button 
               className={`mode-button ${mode === 'layout' ? 'active' : ''}`}
               onClick={() => handleModeChange('layout')}
             >
-              🏠 Room Layout Mode
+              🏠 Layout
             </button>
           </div>
-          <div className="cvd-mode-indicator">
-            <span className="cvd-badge-large">CVD SIMULATOR</span>
-            <span className={`cvd-status ${currentFilter !== 'none' ? 'active' : 'inactive'}`}>
-              {currentFilter !== 'none' ? 'ACTIVE' : 'INACTIVE'}
-            </span>
-          </div>
+          {userType === 'normal' && currentFilter !== 'none' && (
+            <div className="cvd-mode-indicator">
+              <span className={`cvd-status active`}>
+                {cvdSimulationFilters.find(f => f.id === currentFilter)?.name}
+              </span>
+            </div>
+          )}
         </div>
       </header>
       
@@ -714,10 +887,11 @@ function App() {
               {mode === 'customize' ? (
                 <FurnitureModel 
                   currentModel={currentModel} 
-                  currentFilter={currentFilter}
+                  currentFilter={userType === 'normal' ? currentFilter : 'none'}
                   currentTexture={currentTexture}
                   selectedSection={selectedSection}
-                  sectionColors={sectionColors}
+                  // Pass just the hex values to the model
+                  sectionColors={getHexColorsForModel(sectionColors)}
                   onSectionSelect={handleSectionSelect}
                   normalizedScale={getCurrentNormalizedScale()}
                   ref={modelRef}
@@ -731,18 +905,19 @@ function App() {
                   {furnitureItems
                     .filter(item => item.visible)
                     .map((item) => {
-                      const savedCustomizations = getCustomizationsForModel(item.type);
+                      const savedCustomizations = getHexCustomizationsForModel(item.type);
                       
                       return (
                         <FurnitureModel 
                           key={item.id}
                           currentModel={item.type}
-                          currentFilter={currentFilter}
+                          currentFilter={userType === 'normal' ? currentFilter : 'none'}
                           currentTexture={currentTexture}
                           position={item.position}
                           rotation={item.rotation}
                           scale={item.scale}
                           normalizedScale={item.normalizedScale * furnitureSizeScale[item.type]}
+                          // Pass just the hex values to the model
                           sectionColors={savedCustomizations}
                           onClick={() => handleFurnitureSelect(item.id)}
                           isSelected={selectedFurniture === item.id}
@@ -810,8 +985,8 @@ function App() {
               
               {mode === 'layout' && <axesHelper args={[2]} />}
               
-              {/* CVD Post Processing */}
-              {currentFilter !== 'none' && (
+              {/* CVD Post Processing - Only in normal mode */}
+              {userType === 'normal' && currentFilter !== 'none' && (
                 <CVDPostProcessing 
                   filterType={currentFilter}
                   filterMatrix={getCurrentFilterMatrix()}
@@ -822,7 +997,7 @@ function App() {
           
           {/* Selection instructions */}
           {mode === 'layout' && (
-            <div className="selection-instructions">
+            <div className="selection-instructions" role="status" aria-live="polite">
               {selectedFurniture ? (
                 <div className="transform-instructions">
                   <div className="instruction-item">
@@ -855,8 +1030,8 @@ function App() {
             </div>
           )}
           
-          {/* CVD Information Panel */}
-          {currentFilter !== 'none' && (
+          {/* CVD Information Panel - Only in normal mode */}
+          {userType === 'normal' && currentFilter !== 'none' && (
             <div className="cvd-info-panel">
               <div className="cvd-info-header">
                 <h4>
@@ -866,6 +1041,7 @@ function App() {
                 <button 
                   className="cvd-info-close"
                   onClick={() => setCurrentFilter('none')}
+                  aria-label="Disable CVD simulation"
                 >
                   ✕
                 </button>
@@ -881,26 +1057,6 @@ function App() {
                   <div className="cvd-stat">
                     <span className="cvd-stat-label">Severity:</span>
                     <span className="cvd-stat-value">{getCurrentFilterInfo()?.severity}</span>
-                  </div>
-                </div>
-                <div className="cvd-color-test">
-                  <div className="cvd-test-row">
-                    <span className="cvd-test-label">Normal Vision:</span>
-                    <div className="cvd-test-colors">
-                      <div className="cvd-test-color red"></div>
-                      <div className="cvd-test-color green"></div>
-                      <div className="cvd-test-color blue"></div>
-                      <div className="cvd-test-color yellow"></div>
-                    </div>
-                  </div>
-                  <div className="cvd-test-row">
-                    <span className="cvd-test-label">Simulated View:</span>
-                    <div className="cvd-test-colors">
-                      <div className={`cvd-test-color red simulated ${currentFilter}`}></div>
-                      <div className={`cvd-test-color green simulated ${currentFilter}`}></div>
-                      <div className={`cvd-test-color blue simulated ${currentFilter}`}></div>
-                      <div className={`cvd-test-color yellow simulated ${currentFilter}`}></div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -922,6 +1078,7 @@ function App() {
                           key={model.id}
                           className={`model-button ${currentModel === model.id ? 'active' : ''}`}
                           onClick={() => handleModelChange(model.id)}
+                          aria-label={`Select ${model.name} model${customCount > 0 ? ` with ${customCount} customizations` : ''}`}
                         >
                           <div className="model-thumbnail">
                             {model.icon}
@@ -931,8 +1088,8 @@ function App() {
                             <span className="model-type">{model.id}</span>
                             <span className="model-scale">Size: {(model.normalizedScale * 100).toFixed(0)}%</span>
                             {customCount > 0 && (
-                              <span className="model-custom-count">
-                                {customCount} customization{customCount !== 1 ? 's' : ''}
+                              <span className="model-custom-count" aria-label={`${customCount} customizations`}>
+                                {customCount} {customCount === 1 ? 'custom' : 'customs'}
                               </span>
                             )}
                           </div>
@@ -943,123 +1100,133 @@ function App() {
                 </div>
               </div>
 
-              <div className="control-section">
-                <h2>CVD Simulation Filters</h2>
-                <div className="filter-section">
-                  <div className="cvd-scientific-info">
-                    <h4>Scientific CVD Simulation</h4>
-                    <p>Based on Brettel, Viénot & Mollon (1997) color transformation matrices used in accessibility research.</p>
-                    <ul>
-                      <li><strong>Protanopia/Deuteranopia:</strong> Red-Green color blindness</li>
-                      <li><strong>Tritanopia:</strong> Blue-Yellow color blindness</li>
-                      <li><strong>Achromatopsia:</strong> Complete color blindness</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="cvd-category-section">
-                    <h3>Red-Green Color Blindness (Most Common)</h3>
-                    <div className="filter-grid">
-                      {cvdSimulationFilters
-                        .filter(f => f.type.includes('protan') || f.type.includes('deuteran'))
-                        .map((filter) => (
-                        <div
-                          key={filter.id}
-                          className={`filter-card ${currentFilter === filter.id ? 'active' : ''}`}
-                          onClick={() => handleFilterChange(filter.id)}
-                        >
-                          <div className={`filter-preview filter-${filter.type}-preview`}>
-                            <div className="filter-preview-content">
-                              <div className="cvd-test-grid">
-                                <div className="cvd-test-cell red"></div>
-                                <div className="cvd-test-cell green"></div>
-                                <div className="cvd-test-cell blue"></div>
-                                <div className="cvd-test-cell yellow"></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="filter-info">
-                            <h4>{filter.name}</h4>
-                            <p>{filter.description}</p>
-                            <div className="filter-meta">
-                              <span className="filter-prevalence">{filter.prevalence}</span>
-                              <span className="filter-severity">{filter.severity}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+              {/* CVD Simulation Filters - Only in normal mode */}
+              {userType === 'normal' && (
+                <div className="control-section">
+                  <h2>CVD Simulation Filters</h2>
+                  <div className="filter-section">
+                    <div className="cvd-scientific-info">
+                      <h4>Scientific CVD Simulation</h4>
+                      <p>Based on Brettel, Viénot & Mollon (1997) color transformation matrices used in accessibility research.</p>
+                      <ul>
+                        <li><strong>Protanopia/Deuteranopia:</strong> Red-Green color blindness</li>
+                        <li><strong>Tritanopia:</strong> Blue-Yellow color blindness</li>
+                        <li><strong>Achromatopsia:</strong> Complete color blindness</li>
+                      </ul>
                     </div>
-                  </div>
-                  
-                  <div className="cvd-category-section">
-                    <h3>Blue-Yellow Color Blindness (Rare)</h3>
-                    <div className="filter-grid">
-                      {cvdSimulationFilters
-                        .filter(f => f.type.includes('tritan'))
-                        .map((filter) => (
-                        <div
-                          key={filter.id}
-                          className={`filter-card ${currentFilter === filter.id ? 'active' : ''}`}
-                          onClick={() => handleFilterChange(filter.id)}
-                        >
-                          <div className={`filter-preview filter-${filter.type}-preview`}>
-                            <div className="filter-preview-content">
-                              <div className="cvd-test-grid">
-                                <div className="cvd-test-cell red"></div>
-                                <div className="cvd-test-cell green"></div>
-                                <div className="cvd-test-cell blue"></div>
-                                <div className="cvd-test-cell yellow"></div>
+                    
+                    <div className="cvd-category-section">
+                      <h3>Red-Green Color Blindness (Most Common)</h3>
+                      <div className="filter-grid">
+                        {cvdSimulationFilters
+                          .filter(f => f.type.includes('protan') || f.type.includes('deuteran'))
+                          .map((filter) => (
+                          <button
+                            key={filter.id}
+                            className={`filter-card ${currentFilter === filter.id ? 'active' : ''}`}
+                            onClick={() => handleFilterChange(filter.id)}
+                            aria-label={filter.name}
+                            aria-pressed={currentFilter === filter.id}
+                          >
+                            <div className={`filter-preview filter-${filter.type}-preview`}>
+                              <div className="filter-preview-content">
+                                <div className="cvd-test-grid">
+                                  <div className="cvd-test-cell red"></div>
+                                  <div className="cvd-test-cell green"></div>
+                                  <div className="cvd-test-cell blue"></div>
+                                  <div className="cvd-test-cell yellow"></div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="filter-info">
-                            <h4>{filter.name}</h4>
-                            <p>{filter.description}</p>
-                            <div className="filter-meta">
-                              <span className="filter-prevalence">{filter.prevalence}</span>
-                              <span className="filter-severity">{filter.severity}</span>
+                            <div className="filter-info">
+                              <h4>{filter.name}</h4>
+                              <p>{filter.description}</p>
+                              <div className="filter-meta">
+                                <span className="filter-prevalence">{filter.prevalence}</span>
+                                <span className="filter-severity">{filter.severity}</span>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="cvd-category-section">
-                    <h3>Complete & Partial Color Blindness (Very Rare)</h3>
-                    <div className="filter-grid">
-                      {cvdSimulationFilters
-                        .filter(f => f.type.includes('achromat'))
-                        .map((filter) => (
-                        <div
-                          key={filter.id}
-                          className={`filter-card ${currentFilter === filter.id ? 'active' : ''}`}
-                          onClick={() => handleFilterChange(filter.id)}
-                        >
-                          <div className={`filter-preview filter-${filter.type}-preview`}>
-                            <div className="filter-preview-content">
-                              <div className="cvd-test-grid">
-                                <div className="cvd-test-cell red"></div>
-                                <div className="cvd-test-cell green"></div>
-                                <div className="cvd-test-cell blue"></div>
-                                <div className="cvd-test-cell yellow"></div>
+                    
+                    <div className="cvd-category-section">
+                      <h3>Blue-Yellow Color Blindness (Rare)</h3>
+                      <div className="filter-grid">
+                        {cvdSimulationFilters
+                          .filter(f => f.type.includes('tritan'))
+                          .map((filter) => (
+                          <button
+                            key={filter.id}
+                            className={`filter-card ${currentFilter === filter.id ? 'active' : ''}`}
+                            onClick={() => handleFilterChange(filter.id)}
+                            aria-label={filter.name}
+                            aria-pressed={currentFilter === filter.id}
+                          >
+                            <div className={`filter-preview filter-${filter.type}-preview`}>
+                              <div className="filter-preview-content">
+                                <div className="cvd-test-grid">
+                                  <div className="cvd-test-cell red"></div>
+                                  <div className="cvd-test-cell green"></div>
+                                  <div className="cvd-test-cell blue"></div>
+                                  <div className="cvd-test-cell yellow"></div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="filter-info">
-                            <h4>{filter.name}</h4>
-                            <p>{filter.description}</p>
-                            <div className="filter-meta">
-                              <span className="filter-prevalence">{filter.prevalence}</span>
-                              <span className="filter-severity">{filter.severity}</span>
+                            <div className="filter-info">
+                              <h4>{filter.name}</h4>
+                              <p>{filter.description}</p>
+                              <div className="filter-meta">
+                                <span className="filter-prevalence">{filter.prevalence}</span>
+                                <span className="filter-severity">{filter.severity}</span>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="cvd-category-section">
+                      <h3>Complete & Partial Color Blindness (Very Rare)</h3>
+                      <div className="filter-grid">
+                        {cvdSimulationFilters
+                          .filter(f => f.type.includes('achromat'))
+                          .map((filter) => (
+                          <button
+                            key={filter.id}
+                            className={`filter-card ${currentFilter === filter.id ? 'active' : ''}`}
+                            onClick={() => handleFilterChange(filter.id)}
+                            aria-label={filter.name}
+                            aria-pressed={currentFilter === filter.id}
+                          >
+                            <div className={`filter-preview filter-${filter.type}-preview`}>
+                              <div className="filter-preview-content">
+                                <div className="cvd-test-grid">
+                                  <div className="cvd-test-cell red"></div>
+                                  <div className="cvd-test-cell green"></div>
+                                  <div className="cvd-test-cell blue"></div>
+                                  <div className="cvd-test-cell yellow"></div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="filter-info">
+                              <h4>{filter.name}</h4>
+                              <p>{filter.description}</p>
+                              <div className="filter-meta">
+                                <span className="filter-prevalence">{filter.prevalence}</span>
+                                <span className="filter-severity">{filter.severity}</span>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
+              {/* Texture Options */}
               <div className="control-section">
                 <h2>Texture Options</h2>
                 <div className="texture-toggle">
@@ -1116,42 +1283,9 @@ function App() {
                 )}
               </div>
 
+              {/* Section Coloring - Different UI for CVD vs Normal */}
               <div className="control-section">
-                <h2>Quick Actions</h2>
-                <div className="quick-actions">
-                  <button 
-                    className="action-button reset-action"
-                    onClick={resetAllCustomizations}
-                  >
-                    🔄 Reset All Colors
-                  </button>
-                  
-                  <button 
-                    className="action-button default-action"
-                    onClick={resetToDefault}
-                  >
-                    🔲 Reset Filter
-                  </button>
-                  
-                  <button 
-                    className="action-button screenshot-action"
-                    onClick={() => {
-                      const canvas = document.querySelector('canvas');
-                      if (canvas) {
-                        const link = document.createElement('a');
-                        link.download = `furniture-${currentModel}-cvd-${currentFilter}-${Date.now()}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                      }
-                    }}
-                  >
-                    📸 Export Screenshot
-                  </button>
-                </div>
-              </div>
-
-              <div className="control-section">
-                <h2>Section Coloring</h2>
+                <h2>{userType === 'cvd' ? 'Accessible Color Selection' : 'Section Coloring'}</h2>
                 
                 {selectedSection ? (
                   <div className="section-info">
@@ -1160,33 +1294,57 @@ function App() {
                       <button 
                         className="clear-section-btn"
                         onClick={() => setSelectedSection(null)}
+                        aria-label="Clear selection"
                       >
-                        Clear Selection
+                        Clear
                       </button>
                     </div>
                     
                     <div className="color-picker">
                       <h4>Choose Color:</h4>
-                      <div className="color-grid">
-                        {sectionColorPalette.map((color, index) => (
-                          <button
-                            key={index}
-                            className="color-swatch"
-                            style={{ backgroundColor: color }}
-                            onClick={() => applyColorToSection(color)}
-                            title={`Apply ${color} to ${selectedSection}`}
-                          />
-                        ))}
-                      </div>
                       
-                      <div className="custom-color">
-                        <h4>Custom Color:</h4>
-                        <input 
-                          type="color"
-                          onChange={(e) => applyColorToSection(e.target.value)}
-                          style={{ width: '100%', height: '40px' }}
-                        />
-                      </div>
+                      {userType === 'cvd' ? (
+                        // CVD Mode: Color names with high contrast
+                        <div className="cvd-color-grid">
+                          {cvdColorPalette.map((color) => (
+                            <button
+                              key={color.hex}
+                              className="cvd-color-swatch"
+                              style={{ backgroundColor: color.color }}
+                              onClick={() => applyColorToSection(color.color, color.name)}
+                              aria-label={`Apply ${color.name} to ${selectedSection}`}
+                            >
+                              <span className="color-name">{color.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        // Normal Mode: Visual color swatches
+                        <div className="color-grid">
+                          {sectionColorPalette.map((color, index) => (
+                            <button
+                              key={index}
+                              className="color-swatch"
+                              style={{ backgroundColor: color }}
+                              onClick={() => applyColorToSection(color, getColorName(color))}
+                              title={`Apply color to ${selectedSection}`}
+                              aria-label={`Apply color to ${selectedSection}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {userType === 'normal' && (
+                        <div className="custom-color">
+                          <h4>Custom Color:</h4>
+                          <input 
+                            type="color"
+                            onChange={(e) => applyColorToSection(e.target.value, 'Custom')}
+                            style={{ width: '100%', height: '40px' }}
+                            aria-label="Choose custom color"
+                          />
+                        </div>
+                      )}
                       
                       <button 
                         className="reset-section-btn"
@@ -1202,6 +1360,10 @@ function App() {
                           
                           if (modelRef.current && modelRef.current.resetSectionColor) {
                             modelRef.current.resetSectionColor(selectedSection);
+                          }
+                          
+                          if (userType === 'cvd') {
+                            announceToScreenReader(`Reset ${selectedSection} to default`);
                           }
                         }}
                       >
@@ -1228,33 +1390,85 @@ function App() {
                       </div>
                     </div>
                     
+                    {/* Current customizations */}
                     {Object.keys(sectionColors).length > 0 && (
                       <div className="current-customizations">
                         <h4>Current Customizations:</h4>
                         <div className="customization-list">
-                          {Object.entries(sectionColors).map(([section, color]) => (
-                            <div key={section} className="customization-item">
-                              <div 
-                                className="color-preview"
-                                style={{ backgroundColor: color }}
-                              />
-                              <span className="section-label">{section}</span>
-                              <button 
-                                className="edit-btn"
-                                onClick={() => handleSectionSelect(section)}
-                              >
-                                Edit
-                              </button>
-                            </div>
-                          ))}
+                          {Object.entries(sectionColors).map(([section, colorData]) => {
+                            // Handle both string and object color formats
+                            const colorHex = getColorHex(colorData);
+                            const colorName = getColorName(colorData);
+                            
+                            return (
+                              <div key={section} className="customization-item">
+                                <div 
+                                  className="color-preview"
+                                  style={{ backgroundColor: colorHex }}
+                                />
+                                <div className="customization-info">
+                                  <span className="section-label">{section}</span>
+                                  {userType === 'cvd' && (
+                                    <span className="color-name-label">{colorName}</span>
+                                  )}
+                                </div>
+                                <button 
+                                  className="edit-btn"
+                                  onClick={() => handleSectionSelect(section)}
+                                  aria-label={`Edit ${section}`}
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
                   </div>
                 )}
               </div>
+
+              {/* Quick Actions */}
+              <div className="control-section">
+                <h2>Quick Actions</h2>
+                <div className="quick-actions">
+                  <button 
+                    className="action-button reset-action"
+                    onClick={resetAllCustomizations}
+                  >
+                    🔄 Reset All Colors
+                  </button>
+                  
+                  {userType === 'normal' && (
+                    <button 
+                      className="action-button default-action"
+                      onClick={resetToDefault}
+                    >
+                      🔲 Reset Filter
+                    </button>
+                  )}
+                  
+                  <button 
+                    className="action-button screenshot-action"
+                    onClick={() => {
+                      const canvas = document.querySelector('canvas');
+                      if (canvas) {
+                        const link = document.createElement('a');
+                        const mode = userType === 'cvd' ? 'cvd' : 'normal';
+                        link.download = `furniture-${currentModel}-${mode}-${Date.now()}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                      }
+                    }}
+                  >
+                    📸 Export Screenshot
+                  </button>
+                </div>
+              </div>
             </>
           ) : (
+            // Layout Mode Controls
             <>
               <div className="control-section">
                 <h2>Furniture Palette</h2>
@@ -1265,6 +1479,7 @@ function App() {
                   
                   <div className="palette-grid">
                     {modelList.map((model) => {
+                      // Use the helper function to get customizations
                       const customCount = Object.keys(getCustomizationsForModel(model.id)).length;
                       return (
                         <button
@@ -1316,6 +1531,7 @@ function App() {
                     </div>
                   ) : (
                     furnitureItems.map((item) => {
+                      // Use the helper function to get customizations
                       const customCount = Object.keys(getCustomizationsForModel(item.type)).length;
                       return (
                         <div 
@@ -1444,6 +1660,7 @@ function App() {
                       value={currentFilter}
                       onChange={(e) => handleFilterChange(e.target.value)}
                       className="filter-select"
+                      disabled={userType === 'cvd'}
                     >
                       {cvdSimulationFilters.map(filter => (
                         <option key={filter.id} value={filter.id}>
@@ -1451,6 +1668,9 @@ function App() {
                         </option>
                       ))}
                     </select>
+                    {userType === 'cvd' && (
+                      <small className="setting-note">Filters disabled in CVD mode</small>
+                    )}
                   </div>
                   <div className="setting-group">
                     <label>Texture for All Furniture:</label>
@@ -1473,7 +1693,8 @@ function App() {
                         const canvas = document.querySelector('canvas');
                         if (canvas) {
                           const link = document.createElement('a');
-                          link.download = `room-layout-cvd-${currentFilter}-${Date.now()}.png`;
+                          const mode = userType === 'cvd' ? 'cvd' : 'normal';
+                          link.download = `room-layout-${mode}-${Date.now()}.png`;
                           link.href = canvas.toDataURL('image/png');
                           link.click();
                         }
@@ -1507,6 +1728,7 @@ function App() {
                           value={furnitureSizeScale[model.id]}
                           onChange={(e) => updateFurnitureSizeScale(model.id, parseFloat(e.target.value))}
                           className="size-slider"
+                          aria-label={`Adjust ${model.name} size`}
                         />
                         <div className="slider-ticks">
                           <span>Small</span>
