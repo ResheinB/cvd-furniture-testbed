@@ -52,6 +52,13 @@ function App() {
   });
   const [furnitureItems, setFurnitureItems] = useState([]);
   
+  // Room Finishes State
+  const [wallColor, setWallColor] = useState('#e8e8e8');
+  const [floorTexture, setFloorTexture] = useState('none');
+
+  // Feedback Form State
+  const [showFeedback, setShowFeedback] = useState(false);
+  
   const orbitControlsRef = useRef();
   const transformControlsRef = useRef();
   const modelRef = useRef();
@@ -314,7 +321,6 @@ function App() {
     if (!selectedFurniture) return;
     setFurnitureItems(prev => prev.map(item => {
       if (item.id === selectedFurniture) {
-        // Prevent scaling down to zero or negative numbers
         const newScale = Math.max(0.1, item.scale + amount);
         return { ...item, scale: newScale };
       }
@@ -356,6 +362,14 @@ function App() {
   const getCurrentNormalizedScale = () => { return modelList.find(m => m.id === currentModel)?.normalizedScale || 0.8; };
   const handleFilterChange = (filterId) => { if (userType === 'normal') setCurrentFilter(filterId); };
 
+  // Feedback Submission Handler
+  const handleFeedbackSubmit = (e) => {
+    e.preventDefault();
+    // Here you would normally send the data to a backend (like Firebase or EmailJS)
+    fireToast('Thank you for your feedback!', 'success');
+    setShowFeedback(false);
+  };
+
   // ========== RENDER UI ==========
   if (isLoading) return <div className="app-container" style={{justifyContent:'center', alignItems:'center'}}>Setting the scene...</div>;
 
@@ -390,6 +404,9 @@ function App() {
           <Tooltip text="High Contrast Overlay">
              <button className={`btn ${highContrast ? 'btn-primary' : ''}`} onClick={() => setHighContrast(!highContrast)} aria-pressed={highContrast}>🌓</button>
           </Tooltip>
+
+          {/* Feedback Button */}
+          <button className="btn" style={{ marginLeft: '0.5rem' }} onClick={() => setShowFeedback(true)}>📝 Feedback</button>
         </div>
       </header>
 
@@ -402,7 +419,6 @@ function App() {
             {mode === 'customize' && <span className="badge" style={{background: 'var(--primary)', color: '#fff', border: 'none'}}>{modelList.find(m => m.id === currentModel)?.name}</span>}
             {mode === 'customize' && userType === 'normal' && currentFilter !== 'none' && <span className="badge" style={{background: '#d9534f', color: '#fff', border: 'none'}}>Lens: {cvdSimulationFilters.find(f => f.id === currentFilter)?.name}</span>}
             
-            {/* FIX: Badge text color updated for visibility */}
             {mode === 'layout' && selectedFurniture && <span className="badge" style={{background: 'var(--text-main)', color: 'var(--surface)', border: 'none'}}>Framing: {furnitureItems.find(f => f.id === selectedFurniture)?.type}</span>}
           </div>
 
@@ -433,7 +449,7 @@ function App() {
               />
             ) : (
               <group>
-                <RoomLayout />
+                <RoomLayout wallColor={wallColor} floorTexture={floorTexture} />
                 {furnitureItems.filter(item => item.visible).map((item) => {
                   const savedCustomizations = getHexCustomizationsForModel(item.type);
                   return (
@@ -572,11 +588,45 @@ function App() {
                    </div>
                  </>
                )}
+               
+               {/* Room Environment Finishes */}
+               <h3 style={{marginTop: '1.5rem', borderBottom: '1px solid var(--border-fine)', paddingBottom: '0.5rem'}}>Room Finishes</h3>
+               
+               <div>
+                 <p style={{fontSize: '0.9rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Wall Paint:</p>
+                 <div className="grid-4col">
+                   {sectionColorPalette.slice(0, 8).map(hex => (
+                     <Tooltip key={`wall-${hex}`} text="Apply Wall Color">
+                       <button 
+                         className={`color-swatch ${wallColor === hex ? 'active' : ''}`} 
+                         style={{ backgroundColor: hex }} 
+                         onClick={() => setWallColor(hex)} 
+                       />
+                     </Tooltip>
+                   ))}
+                 </div>
+               </div>
+
+               <div>
+                 <p style={{fontSize: '0.9rem', marginTop: '1rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Floor Material:</p>
+                 <div className="grid-2col">
+                   {textureList.map(t => (
+                     <button 
+                       key={`floor-${t.id}`} 
+                       className={`btn ${floorTexture === t.id ? 'btn-primary' : ''}`} 
+                       style={{justifyContent:'center', fontSize: '0.8rem'}} 
+                       onClick={() => setFloorTexture(t.id)}
+                     >
+                       {t.id === 'none' ? 'Default Floor' : t.name}
+                     </button>
+                   ))}
+                 </div>
+               </div>
 
                {furnitureItems.length > 0 && (
                  <>
                    <p style={{fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem', fontStyle: 'italic'}}>Current Exhibition:</p>
-                   <div style={{maxHeight: '200px', overflowY: 'auto', paddingRight: '0.5rem'}}>
+                   <div style={{maxHeight: '150px', overflowY: 'auto', paddingRight: '0.5rem'}}>
                      {furnitureItems.map(item => (
                        <div key={item.id} className={`list-item ${selectedFurniture === item.id ? 'selected' : ''}`} onClick={() => handleFurnitureSelect(item.id)}>
                          <span style={{textTransform: 'capitalize', fontSize: '0.9rem', fontWeight: 600}}>{item.type}</span>
@@ -600,6 +650,60 @@ function App() {
           )}
         </aside>
       </main>
+
+      {/* =========================================
+          FEEDBACK MODAL OVERLAY
+          ========================================= */}
+      {showFeedback && (
+        <div className="modal-overlay" onClick={() => setShowFeedback(false)}>
+          {/* Prevent clicks inside the modal from closing it */}
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+              <h2 style={{margin: 0, fontFamily: 'Lora'}}>Share Your Thoughts</h2>
+              <button className="btn" style={{padding: '0.3rem 0.6rem'}} onClick={() => setShowFeedback(false)}>✕</button>
+            </div>
+            
+            <form onSubmit={handleFeedbackSubmit}>
+              <div className="form-group">
+                <label>Name</label>
+                <input type="text" className="form-control" placeholder="Your Name" required />
+              </div>
+              
+              <div className="form-group">
+                <label>Role</label>
+                <select className="form-control" required>
+                  <option value="">Select your role...</option>
+                  <option value="designer">Designer / Architect</option>
+                  <option value="developer">Developer</option>
+                  <option value="user_cvd">User with CVD</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>How easy was the tool to use?</label>
+                <div style={{display: 'flex', gap: '1rem'}}>
+                  {[1, 2, 3, 4, 5].map(num => (
+                    <label key={num} style={{display: 'flex', alignItems: 'center', gap: '0.2rem', fontWeight: 'normal'}}>
+                      <input type="radio" name="rating" value={num} required /> {num}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Feedback & Suggestions</label>
+                <textarea className="form-control" rows="4" placeholder="What did you like? What could be better?" required></textarea>
+              </div>
+
+              <div style={{display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem'}}>
+                <button type="button" className="btn" onClick={() => setShowFeedback(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Submit Feedback</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
