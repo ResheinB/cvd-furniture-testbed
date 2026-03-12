@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, TransformControls } from '@react-three/drei';
+import { OrbitControls, TransformControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import FurnitureModel from './components/threejs/FurnitureModel';
 import RoomLayout from './components/threejs/RoomLayout';
@@ -8,7 +8,7 @@ import CVDPostProcessing from './components/threejs/CVDPostProcessing';
 import './App.css';
 
 /* =========================================
-   UI COMPONENTS
+   UI COMPONENTS (Artsy Theme)
    ========================================= */
 
 const Tooltip = ({ children, text }) => (
@@ -52,6 +52,7 @@ function App() {
   });
   const [furnitureItems, setFurnitureItems] = useState([]);
   
+  // Room Finishes State
   const [wallColor, setWallColor] = useState('#e8e8e8');
   const [floorTexture, setFloorTexture] = useState('none');
   
@@ -59,6 +60,15 @@ function App() {
   const transformControlsRef = useRef();
   const modelRef = useRef();
   const [isTransforming, setIsTransforming] = useState(false);
+
+  // NEW: Refs to manage physical 3D objects and prevent state closures from breaking
+  const furnitureRefs = useRef({});
+  const selectedFurnitureRef = useRef(null);
+
+  // Keep ref up to date with state
+  useEffect(() => {
+    selectedFurnitureRef.current = selectedFurniture;
+  }, [selectedFurniture]);
 
   // ========== UI EXTENSIONS ==========
   const [highContrast, setHighContrast] = useState(false);
@@ -130,6 +140,15 @@ function App() {
     if (highContrast) document.body.setAttribute('data-theme', 'high-contrast');
     else document.body.removeAttribute('data-theme');
   }, [highContrast]);
+
+  // NEW: Dynamically attach the TransformControls to the selected 3D Group
+  useEffect(() => {
+    if (mode === 'layout' && selectedFurniture && transformControlsRef.current && furnitureRefs.current[selectedFurniture]) {
+      transformControlsRef.current.attach(furnitureRefs.current[selectedFurniture]);
+    } else if (transformControlsRef.current) {
+      transformControlsRef.current.detach();
+    }
+  }, [selectedFurniture, mode, transformMode]);
 
   const getColorHex = (colorData) => {
     if (!colorData) return '#FFFFFF';
@@ -252,7 +271,6 @@ function App() {
     setMode(newMode);
     setSelectedSection(null);
     handleDeselect();
-    if (transformControlsRef.current) transformControlsRef.current.detach();
     fireToast(`${newMode === 'customize' ? 'Studio' : 'Layout'} View`, 'info');
   };
 
@@ -260,8 +278,6 @@ function App() {
     if (mode === 'layout') {
       if (selectedFurniture === furnitureId) { handleDeselect(); return; }
       setSelectedFurniture(furnitureId);
-      setIsTransforming(true);
-      if (orbitControlsRef.current) orbitControlsRef.current.enabled = false;
       if (userType === 'cvd') {
         const item = furnitureItems.find(f => f.id === furnitureId);
         announceToScreenReader(`Selected ${item?.type}`);
@@ -273,7 +289,6 @@ function App() {
     setSelectedFurniture(null);
     setIsTransforming(false);
     if (orbitControlsRef.current) orbitControlsRef.current.enabled = true;
-    if (transformControlsRef.current) transformControlsRef.current.detach();
   };
 
   const handleCanvasClick = (event) => {
@@ -289,14 +304,21 @@ function App() {
     setIsTransforming(true);
   };
 
-  const handleTransformChange = (e) => {
-    if (!e?.target?.object || !selectedFurniture) return;
-    const selectedItem = furnitureItems.find(f => f.id === selectedFurniture);
-    if (!selectedItem) return;
-    const newPosition = [e.target.object.position.x, e.target.object.position.y, e.target.object.position.z];
-    let newRotation = transformMode === 'rotate' ? [0, e.target.object.rotation.y, 0] : [e.target.object.rotation.x, e.target.object.rotation.y, e.target.object.rotation.z];
-    let newScale = transformMode === 'scale' ? e.target.object.scale.x : selectedItem.scale;
-    updateFurniturePosition(selectedFurniture, newPosition, newRotation, newScale);
+  // NEW: Only update React state AFTER the drag finishes. This stops the bouncing!
+  const handleTransformMouseUp = () => {
+    setIsTransforming(false);
+    if (orbitControlsRef.current) orbitControlsRef.current.enabled = true;
+
+    const currentSelected = selectedFurnitureRef.current;
+    if (currentSelected && furnitureRefs.current[currentSelected]) {
+      const obj = furnitureRefs.current[currentSelected];
+      
+      const newPos = [obj.position.x, obj.position.y, obj.position.z];
+      const newRot = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
+      const newScale = obj.scale.x; 
+
+      updateFurniturePosition(currentSelected, newPos, newRot, newScale);
+    }
   };
 
   const updateFurniturePosition = (id, position, rotation, scale) => {
@@ -385,10 +407,18 @@ function App() {
           ) : (
             <group>
               <RoomLayout wallColor={wallColor} floorTexture={floorTexture} />
+              
+              {/* NEW: Map out items and assign physical Refs to them */}
               {furnitureItems.filter(item => item.visible).map((item) => {
                 const savedCustomizations = getHexCustomizationsForModel(item.type);
                 return (
-                  <group key={item.id} position={item.position} rotation={item.rotation} scale={[item.scale, item.scale, item.scale]}>
+                  <group 
+                    key={item.id} 
+                    ref={(el) => (furnitureRefs.current[item.id] = el)}
+                    position={item.position} 
+                    rotation={item.rotation} 
+                    scale={[item.scale, item.scale, item.scale]}
+                  >
                     <FurnitureModel 
                       currentModel={item.type} 
                       currentFilter={userType === 'normal' ? currentFilter : 'none'} 
@@ -402,15 +432,15 @@ function App() {
                 );
               })}
 
-              {selectedFurniture && (
-                <TransformControls 
-                  ref={transformControlsRef} 
-                  mode={transformMode} 
-                  onMouseDown={handleTransformStart} 
-                  onMouseUp={() => {}} 
-                  onChange={handleTransformChange} 
-                />
-              )}
+              {/* NEW: The TransformControls stays mounted but gets attached to refs dynamically via useEffect */}
+              <TransformControls 
+                ref={transformControlsRef} 
+                mode={transformMode} 
+                onMouseDown={handleTransformStart} 
+                onMouseUp={handleTransformMouseUp} 
+                showX={transformMode === 'rotate' ? false : true} // Hides awkward rings during rotation
+                showZ={transformMode === 'rotate' ? false : true} // Forces rotation to be purely horizontal
+              />
             </group>
           )}
 
