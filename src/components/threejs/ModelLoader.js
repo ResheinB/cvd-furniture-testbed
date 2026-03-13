@@ -1,567 +1,140 @@
-/**
- * Core 3D model loading and manipulation component
- * 
- * Responsibilities:
- * - Load GLTF models from /models/ directory
- * - Apply materials, textures, and colors
- * - Handle section selection via raycasting
- * - Manage color customizations per model
- * - Apply CVD filter effects at material level
- * - Normalize model scales for consistency
- * 
- * Uses:
- * - GLTFLoader for 3D model loading
- * - Three.js materials and textures
- * - Raycaster for mouse interaction
- * - Color transformation for CVD simulation
- */
-
-import React, { useEffect, useState, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
+import { useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { TextureLoader } from 'three';
-import { useThree } from '@react-three/fiber';
 
-const ModelLoader = forwardRef(({ 
-  modelName, 
+const ModelLoader = forwardRef(({
   modelId,
-  position = [0, 0, 0], 
+  position = [0, 0, 0],
   scale = 1,
   normalizedScale = 1,
-  currentFilter = 'none',
-  currentTexture = 'none',
-  primaryColor = '#FFFFFF',
-  secondaryColor = '#F5F5F5',
-  primaryEmissive = 0x000000,
-  secondaryEmissive = 0x000000,
-  emissiveIntensity = 0,
-  textureProperties = {},
-  selectedSection = null,
+  currentFilter,
+  currentTexture,
+  primaryColor,
+  secondaryColor,
+  textureProperties,
+  selectedSection,
   sectionColors = {},
   onSectionSelect,
-  mode = 'customize'
+  mode
 }, ref) => {
-  const [model, setModel] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [texture, setTexture] = useState(null);
-  const { camera, gl } = useThree();
   
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
-  const mouse = useMemo(() => new THREE.Vector2(), []);
-  
-  const primaryThreeColor = useMemo(() => 
-    new THREE.Color(primaryColor), [primaryColor]);
-  
-  const secondaryThreeColor = useMemo(() => 
-    new THREE.Color(secondaryColor), [secondaryColor]);
+  // 1. Load the 3D geometry
+  const { scene } = useGLTF(`/models/${modelId || 'desk'}.glb`);
 
-  const primaryEmissiveColor = useMemo(() => 
-    new THREE.Color(primaryEmissive), [primaryEmissive]);
-  
-  const secondaryEmissiveColor = useMemo(() => 
-    new THREE.Color(secondaryEmissive), [secondaryEmissive]);
-  
-  const originalColors = useRef({});
-  const originalEmissive = useRef({});
-  const customSections = useRef({});
-
-  useEffect(() => {
-    if (modelId && !originalColors.current[modelId]) {
-      originalColors.current[modelId] = new Map();
-      originalEmissive.current[modelId] = new Map();
-      customSections.current[modelId] = new Set();
-    }
-  }, [modelId]);
-
-  const getCurrentModelStorage = () => {
-    if (!modelId) return { colors: new Map(), emissive: new Map(), sections: new Set() };
-    return {
-      colors: originalColors.current[modelId] || new Map(),
-      emissive: originalEmissive.current[modelId] || new Map(),
-      sections: customSections.current[modelId] || new Set()
-    };
-  };
-
-  useImperativeHandle(ref, () => ({
-    applyColorToSection: (sectionName, color) => {
-      return applyColorToSpecificSection(sectionName, color);
-    },
-    resetSectionColor: (sectionName) => {
-      resetSpecificSection(sectionName);
-    },
-    resetAllColors: () => {
-      const storage = getCurrentModelStorage();
-      const count = storage.sections.size;
-      
-      storage.colors.clear();
-      storage.emissive.clear();
-      storage.sections.clear();
-      
-      if (model) {
-        applyMaterialToModel(model, false);
-      }
-      
-      return count;
-    },
-    getModelInfo: () => {
-      return getAvailableSections();
-    },
-    getAllSections: () => {
-      return getAllSectionNames();
-    },
-    getCurrentCustomizations: () => {
-      const storage = getCurrentModelStorage();
-      return Array.from(storage.sections);
-    }
-  }), [model, modelId]);
-
-  const performRaycast = (clientX, clientY) => {
-    if (!model || !gl.domElement || mode === 'layout') return null;
-    
-    const rect = gl.domElement.getBoundingClientRect();
-    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-    
-    raycaster.setFromCamera(mouse, camera);
-    
-    const intersectableObjects = [];
-    model.traverse((child) => {
-      if (child.isMesh && child.visible) {
-        intersectableObjects.push(child);
-      }
-    });
-    
-    const intersects = raycaster.intersectObjects(intersectableObjects, true);
-    
-    if (intersects.length > 0) {
-      const clickedObject = intersects[0].object;
-      
-      let meshName = clickedObject.name;
-      let parent = clickedObject.parent;
-      
-      while (parent && parent !== model) {
-        if (!meshName && parent.name && parent.name !== '') {
-          meshName = parent.name;
-        }
-        parent = parent.parent;
-      }
-      
-      const sectionName = meshName || 'unnamed';
-      
-      if (onSectionSelect) {
-        onSectionSelect(sectionName);
-      }
-      
-      return sectionName;
-    }
-    
-    return null;
-  };
-
-  const getAllSectionNames = () => {
-    const sections = new Set();
-    if (model) {
-      model.traverse((child) => {
-        if (child.isMesh && child.name) {
-          sections.add(child.name);
-        }
-      });
-    }
-    return Array.from(sections);
-  };
-
-  const getAvailableSections = () => {
-    const sections = new Set();
-    if (model) {
-      model.traverse((child) => {
-        if (child.isMesh) {
-          const name = child.name || 'unnamed';
-          sections.add(name);
-        }
-      });
-    }
-    return Array.from(sections);
-  };
-
-  const applyColorToSpecificSection = (sectionName, color) => {
-    if (!model || !modelId) {
-      console.error('[applyColorToSpecificSection] Model not loaded or no modelId');
-      return false;
-    }
-    
-    const storage = getCurrentModelStorage();
-    const threeColor = new THREE.Color(color);
-    let sectionFound = false;
-    
-    console.log(`[ModelLoader ${modelId}] Applying ${color} to section "${sectionName}"`);
-    
-    model.traverse((child) => {
-      if (child.isMesh && child.material) {
-        const meshName = child.name || '';
-        if (meshName === sectionName || 
-            meshName.toLowerCase().includes(sectionName.toLowerCase())) {
-          
-          sectionFound = true;
-          const meshId = child.uuid;
-          
-          if (!storage.colors.has(meshId)) {
-            storage.colors.set(meshId, child.material.color.clone());
-            storage.emissive.set(meshId, {
-              color: child.material.emissive.clone(),
-              intensity: child.material.emissiveIntensity
-            });
-          }
-          
-          child.material.color.copy(threeColor);
-          storage.sections.add(meshName || sectionName);
-          child.material.needsUpdate = true;
-        }
-      }
-    });
-    
-    if (!sectionFound) {
-      console.warn(`[${modelId}] Section "${sectionName}" not found in model`);
-    }
-    
-    return sectionFound;
-  };
-
-  const resetSpecificSection = (sectionName) => {
-    if (!model || !modelId) return;
-    
-    const storage = getCurrentModelStorage();
-    let resetCount = 0;
-    
-    model.traverse((child) => {
-      if (child.isMesh && child.material) {
-        const meshName = child.name || '';
-        if (meshName === sectionName || 
-            meshName.toLowerCase().includes(sectionName.toLowerCase())) {
-          
-          const meshId = child.uuid;
-          const originalColor = storage.colors.get(meshId);
-          const originalEmissiveData = storage.emissive.get(meshId);
-          
-          if (originalColor) {
-            child.material.color.copy(originalColor);
-          }
-          
-          if (originalEmissiveData) {
-            child.material.emissive.copy(originalEmissiveData.color);
-            child.material.emissiveIntensity = originalEmissiveData.intensity;
-          } else {
-            child.material.emissive = new THREE.Color(0x000000);
-            child.material.emissiveIntensity = 0;
-          }
-          
-          child.material.needsUpdate = true;
-          resetCount++;
-          
-          storage.colors.delete(meshId);
-          storage.emissive.delete(meshId);
-          storage.sections.delete(meshName || sectionName);
-        }
-      }
-    });
-  };
-
-  const hasCustomColor = (meshName) => {
-    if (!meshName || !modelId) return false;
-    
-    const storage = getCurrentModelStorage();
-    
-    if (storage.sections.has(meshName)) {
-      return true;
-    }
-    
-    for (const customSection of storage.sections) {
-      if (meshName.toLowerCase().includes(customSection.toLowerCase()) || 
-          customSection.toLowerCase().includes(meshName.toLowerCase())) {
-        return true;
-      }
-    }
-    
-    return false;
-  };
-
-  const applyMaterialToModel = (scene, preserveCustomColors = true) => {
-    if (!scene) return;
-    
-    const storage = getCurrentModelStorage();
-    
-    scene.traverse((child) => {
-      if (child.isMesh && child.material) {
-        if (!(child.material instanceof THREE.MeshStandardMaterial)) {
-          child.material = new THREE.MeshStandardMaterial({
-            color: child.material.color,
-            map: child.material.map,
-            transparent: child.material.transparent,
-            opacity: child.material.opacity,
-            roughness: 0.8,
-            metalness: 0.1
-          });
-        }
-        
-        const meshName = child.name || '';
-        const isCustomized = preserveCustomColors && hasCustomColor(meshName);
-        
-        if (isCustomized) {
-          if (currentTexture !== 'none' && texture) {
-            child.material.map = texture;
-            child.material.map.needsUpdate = true;
-            child.material.map.wrapS = THREE.RepeatWrapping;
-            child.material.map.wrapT = THREE.RepeatWrapping;
-            child.material.map.repeat.set(
-              textureProperties.repeat?.[0] || 1,
-              textureProperties.repeat?.[1] || 1
-            );
-          } else {
-            child.material.map = null;
-          }
-        } else {
-          const name = child.name ? child.name.toLowerCase() : '';
-          const materialName = child.material.name ? child.material.name.toLowerCase() : '';
-          
-          const isSecondary = name.includes('cushion') || 
-                             name.includes('seat') || 
-                             name.includes('back') ||
-                             name.includes('fabric') ||
-                             name.includes('upholstery') ||
-                             name.includes('leather') ||
-                             materialName.includes('fabric') ||
-                             materialName.includes('leather') ||
-                             materialName.includes('cushion');
-          
-          const targetColor = isSecondary ? secondaryThreeColor : primaryThreeColor;
-          const targetEmissive = isSecondary ? secondaryEmissiveColor : primaryEmissiveColor;
-          
-          child.material.color.copy(targetColor);
-          child.material.emissive.copy(targetEmissive);
-          child.material.emissiveIntensity = emissiveIntensity;
-          
-          if (currentTexture !== 'none' && texture) {
-            child.material.map = texture;
-            child.material.map.needsUpdate = true;
-            child.material.map.wrapS = THREE.RepeatWrapping;
-            child.material.map.wrapT = THREE.RepeatWrapping;
-            child.material.map.repeat.set(
-              textureProperties.repeat?.[0] || 1,
-              textureProperties.repeat?.[1] || 1
-            );
-          } else {
-            child.material.map = null;
-          }
-        }
-        
-        if (textureProperties.metalness !== undefined) {
-          child.material.metalness = textureProperties.metalness;
-        }
-        if (textureProperties.roughness !== undefined) {
-          child.material.roughness = textureProperties.roughness;
-        }
-        if (textureProperties.transparent !== undefined) {
-          child.material.transparent = textureProperties.transparent;
-        }
-        if (textureProperties.opacity !== undefined) {
-          child.material.opacity = textureProperties.opacity;
-        }
-        
-        child.material.needsUpdate = true;
+  // 2. Clone the scene so multiple of the same furniture don't share identical materials
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone();
+    clone.traverse((child) => {
+      if (child.isMesh) {
+        // Give each mesh its own unique material instance
+        child.material = child.material.clone();
         child.castShadow = true;
         child.receiveShadow = true;
       }
     });
+    return clone;
+  }, [scene]);
+
+  // 3. Apply textures, colors, and highlights whenever state changes
+  useEffect(() => {
+    if (!clonedScene) return;
+
+    // Pre-load texture if the user selected one (wood, marble, etc.)
+    let textureMap = null;
+    if (textureProperties?.imageUrl) {
+      const textureLoader = new THREE.TextureLoader();
+      textureMap = textureLoader.load(textureProperties.imageUrl);
+      textureMap.wrapS = THREE.RepeatWrapping;
+      textureMap.wrapT = THREE.RepeatWrapping;
+      if (textureProperties.repeat) {
+        textureMap.repeat.set(textureProperties.repeat[0], textureProperties.repeat[1]);
+      }
+    }
+
+    clonedScene.traverse((child) => {
+      if (child.isMesh) {
+        // A. Apply Color (Customized section or fallback to primary)
+        if (sectionColors[child.name]) {
+          child.material.color.set(sectionColors[child.name]);
+        } else {
+          child.material.color.set(primaryColor || '#FFFFFF');
+        }
+
+        // B. Apply Textures and Physical Properties
+        child.material.map = textureMap;
+        child.material.roughness = textureProperties?.roughness ?? 0.8;
+        child.material.metalness = textureProperties?.metalness ?? 0.1;
+        child.material.envMapIntensity = textureProperties?.envMapIntensity ?? 1;
+        
+        // C. Handle Glass / Transparency
+        if (textureProperties?.transparent) {
+          child.material.transparent = true;
+          child.material.opacity = textureProperties.opacity ?? 1;
+        } else {
+          child.material.transparent = false;
+          child.material.opacity = 1;
+        }
+
+        // D. Highlight the specific part the user is customizing
+        if (mode === 'customize' && selectedSection === child.name) {
+          child.material.emissive.setHex(0x444444); // Glow slightly
+        } else {
+          child.material.emissive.setHex(0x000000);
+        }
+
+        child.material.needsUpdate = true;
+      }
+    });
+  }, [clonedScene, sectionColors, textureProperties, primaryColor, mode, selectedSection]);
+
+  // 4. Handle Raycasting (Clicking on specific parts of the chair/desk)
+  const handlePointerDown = (e) => {
+    if (mode === 'customize' && onSectionSelect) {
+      e.stopPropagation(); // Prevent clicking through the model
+      onSectionSelect(e.object.name);
+    }
   };
 
-  useEffect(() => {
-    if (currentTexture !== 'none' && textureProperties.imageUrl) {
-      const textureLoader = new TextureLoader();
-      textureLoader.load(
-        textureProperties.imageUrl,
-        (loadedTexture) => {
-          loadedTexture.wrapS = loadedTexture.wrapT = THREE.RepeatWrapping;
-          loadedTexture.repeat.set(
-            textureProperties.repeat?.[0] || 1,
-            textureProperties.repeat?.[1] || 1
-          );
-          loadedTexture.anisotropy = 16;
-          setTexture(loadedTexture);
-        },
-        undefined,
-        (err) => {
-          console.warn('Failed to load texture:', err);
-          setTexture(null);
-        }
-      );
-    } else {
-      setTexture(null);
+  const handlePointerOver = (e) => {
+    if (mode === 'customize') {
+      e.stopPropagation();
+      document.body.style.cursor = 'crosshair';
     }
-  }, [currentTexture, textureProperties]);
+  };
 
-  useEffect(() => {
-    if (!model || !gl.domElement || mode === 'layout') return;
-    
-    const handlePointerDown = (event) => {
-      if (!model || event.button !== 0) return;
-      
-      const rect = gl.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      raycaster.setFromCamera(mouse, camera);
-      
-      const intersectableObjects = [];
-      model.traverse((child) => {
-        if (child.isMesh && child.visible) {
-          intersectableObjects.push(child);
-        }
+  const handlePointerOut = (e) => {
+    if (mode === 'customize') {
+      e.stopPropagation();
+      document.body.style.cursor = 'auto';
+    }
+  };
+
+  // 5. Connect to the API expected by FurnitureModel.js
+  useImperativeHandle(ref, () => ({
+    getAllSections: () => {
+      const sections = [];
+      clonedScene.traverse((child) => {
+        if (child.isMesh) sections.push(child.name);
       });
-      
-      const intersects = raycaster.intersectObjects(intersectableObjects, true);
-      
-      if (intersects.length > 0) {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        const clickedObject = intersects[0].object;
-        
-        let meshName = clickedObject.name;
-        let currentParent = clickedObject.parent;
-        
-        while (currentParent && currentParent !== model) {
-          if (currentParent.name && currentParent.name !== '' && !meshName) {
-            meshName = currentParent.name;
-          }
-          currentParent = currentParent.parent;
-        }
-        
-        const sectionName = meshName || 'unnamed';
-        
-        if (onSectionSelect) {
-          onSectionSelect(sectionName);
-        }
-      }
-    };
-    
-    const canvas = gl.domElement;
-    canvas.addEventListener('pointerdown', handlePointerDown);
-    
-    return () => {
-      canvas.removeEventListener('pointerdown', handlePointerDown);
-    };
-  }, [model, gl, camera, raycaster, mouse, onSectionSelect, mode]);
+      return sections;
+    },
+    getCurrentCustomizations: () => sectionColors
+  }));
 
-  useEffect(() => {
-    console.log(`[ModelLoader] Loading model: ${modelName} (ID: ${modelId})`);
-    setLoading(true);
-    setError(null);
-
-    const loader = new GLTFLoader();
-    
-    loader.load(
-      `/models/${modelName}.glb`,
-      (gltf) => {
-        console.log(`[ModelLoader] ✅ Model ${modelName} (ID: ${modelId}) loaded successfully!`);
-        
-        const scene = gltf.scene;
-        
-        const box = new THREE.Box3().setFromObject(scene);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        
-        const maxDimension = Math.max(size.x, size.y, size.z);
-        const targetSize = 2.0;
-        const normalizedScaleFactor = targetSize / maxDimension;
-        const finalScale = normalizedScaleFactor * normalizedScale;
-        
-        if (Math.abs(center.x) > 0.1 || Math.abs(center.y) > 0.1 || Math.abs(center.z) > 0.1) {
-          scene.position.x = -center.x;
-          scene.position.y = -center.y + (size.y / 2);
-          scene.position.z = -center.z;
-        }
-        
-        scene.scale.set(finalScale, finalScale, finalScale);
-        
-        applyMaterialToModel(scene, true);
-        
-        setModel(scene);
-        setLoading(false);
-      },
-      (progress) => {
-        if (progress.lengthComputable) {
-          const percentComplete = (progress.loaded / progress.total) * 100;
-          console.log(`[ModelLoader] Loading ${modelName}: ${Math.round(percentComplete)}%`);
-        }
-      },
-      (error) => {
-        console.error(`[ModelLoader] ❌ Failed to load model ${modelName}:`, error);
-        setError(error.message);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      if (texture) {
-        texture.dispose();
-      }
-    };
-  }, [modelName, modelId, normalizedScale]);
-
-  useEffect(() => {
-    if (model) {
-      applyMaterialToModel(model, true);
-    }
-  }, [currentFilter, currentTexture, texture, primaryThreeColor, secondaryThreeColor, textureProperties, model]);
-
-  useEffect(() => {
-    if (model && sectionColors && modelId) {
-      Object.entries(sectionColors).forEach(([section, color]) => {
-        applyColorToSpecificSection(section, color);
-      });
-    }
-  }, [sectionColors, model, modelId]);
-
-  if (loading) {
-    return (
-      <group position={position}>
-        <mesh>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial 
-            color={primaryThreeColor}
-            transparent={true}
-            opacity={0.5}
-          />
-        </mesh>
-      </group>
-    );
-  }
-
-  if (error) {
-    return (
-      <group position={position}>
-        <mesh>
-          <boxGeometry args={[2, 2, 2]} />
-          <meshStandardMaterial 
-            color="#ff4444"
-            emissive="#ff0000"
-            emissiveIntensity={0.2}
-          />
-        </mesh>
-      </group>
-    );
-  }
-
-  if (model) {
-    return (
-      <group position={position}>
-        <primitive object={model} />
-      </group>
-    );
-  }
-
-  return null;
+  // 6. Render the 3D Model Wrapped in the Center Fix
+  return (
+    <group position={position} scale={scale * normalizedScale}>
+      {/* THE FIX: <Center bottom> forces the geometry to coordinate 0,0,0 */}
+      <Center bottom>
+        <primitive 
+          object={clonedScene} 
+          onPointerDown={handlePointerDown}
+          onPointerOver={handlePointerOver}
+          onPointerOut={handlePointerOut}
+        />
+      </Center>
+    </group>
+  );
 });
 
-ModelLoader.displayName = 'ModelLoader';
 export default ModelLoader;

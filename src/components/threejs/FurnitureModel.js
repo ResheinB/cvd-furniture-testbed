@@ -1,14 +1,12 @@
 /**
  * Reusable 3D furniture component
- * 
- * Responsibilities:
+ * * Responsibilities:
  * - Load and display 3D furniture models
  * - Handle section selection for coloring
  * - Apply textures and CVD filters
  * - Manage click interactions for both modes
  * - Provide API for color manipulation
- * 
- * Props:
+ * * Props:
  * - currentModel: Which furniture model to display
  * - currentFilter: CVD filter to apply
  * - currentTexture: Texture to apply
@@ -19,9 +17,9 @@
  * - mode: 'customize' or 'layout'
  */
 
-
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import * as THREE from 'three';
+import { Center } from '@react-three/drei'; // <-- Added Center import
 import ModelLoader from './ModelLoader';
 
 const FurnitureModel = forwardRef(({ 
@@ -235,26 +233,29 @@ const FurnitureModel = forwardRef(({
         </group>
       )}
       
-      <ModelLoader
-        modelName={currentModel || 'desk'}
-        modelId={currentModel}
-        position={[0, 0, 0]}
-        scale={1}
-        normalizedScale={normalizedScale}
-        currentFilter={currentFilter}
-        currentTexture={currentTexture}
-        primaryColor={colors.primary}
-        secondaryColor={colors.secondary}
-        primaryEmissive={colors.emissive}
-        secondaryEmissive={colors.emissive}
-        emissiveIntensity={colors.emissiveIntensity}
-        textureProperties={textureProperties}
-        selectedSection={selectedSection}
-        sectionColors={sectionColors}
-        onSectionSelect={onSectionSelect}
-        mode={mode}
-        ref={modelLoaderRef}
-      />
+      {/* <-- WRAPPED MODEL LOADER IN CENTER COMPONENT --> */}
+      <Center bottom>
+        <ModelLoader
+          modelName={currentModel || 'desk'}
+          modelId={currentModel}
+          position={[0, 0, 0]}
+          scale={1}
+          normalizedScale={normalizedScale}
+          currentFilter={currentFilter}
+          currentTexture={currentTexture}
+          primaryColor={colors.primary}
+          secondaryColor={colors.secondary}
+          primaryEmissive={colors.emissive}
+          secondaryEmissive={colors.emissive}
+          emissiveIntensity={colors.emissiveIntensity}
+          textureProperties={textureProperties}
+          selectedSection={selectedSection}
+          sectionColors={sectionColors}
+          onSectionSelect={onSectionSelect}
+          mode={mode}
+          ref={modelLoaderRef}
+        />
+      </Center>
     </group>
   );
 });

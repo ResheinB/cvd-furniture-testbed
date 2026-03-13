@@ -494,7 +494,7 @@ function App() {
 
               <button 
                 className="btn" 
-                onClick={() => window.open('YOUR_GOOGLE_FORM_URL_HERE', '_blank', 'noopener,noreferrer')}
+                onClick={() => window.open('https://forms.gle/Y8p7iWRiLaey9GBRA', '_blank', 'noopener,noreferrer')}
               >
                 Feedback
               </button>
