@@ -35,7 +35,7 @@ const RoomLayout = ({ wallColor = "#e8e8e8", floorTexture = "none" }) => {
     }
 
     const textureUrls = {
-      'wood': '/textures/wood.jpg',
+      'wood': '/textures/Wood1.jpg',
       'marble': '/textures/marble.jpg',
       'fabric': '/textures/fabric.jpg',
       'metal': '/textures/metal.jpg',

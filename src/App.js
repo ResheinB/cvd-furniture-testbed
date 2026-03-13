@@ -116,17 +116,14 @@ function App() {
     { id: 'metal', name: 'Brushed Steel' },
     { id: 'leather', name: 'Premium Leather' },
     { id: 'concrete', name: 'Raw Concrete' },
-    { id: 'glass', name: 'Clear Glass' }
   ];
   
   const modelList = [
     { id: 'desk', name: 'Studio Desk', normalizedScale: 0.8 },
-    
     { id: 'wardrobe', name: 'Wardrobe', normalizedScale: 0.7 },
     { id: 'bookshelf', name: 'Bookshelf', normalizedScale: 0.9 },
     { id: 'bed', name: 'Platform Bed', normalizedScale: 0.5 },
     { id: 'sofa', name: 'Lounge Sofa', normalizedScale: 0.6 },
-    
     { id: 'cabinet', name: 'Storage Cabinet', normalizedScale: 0.8 },
   ];
 
@@ -141,7 +138,7 @@ function App() {
     else document.body.removeAttribute('data-theme');
   }, [highContrast]);
 
-  // NEW: Dynamically attach the TransformControls to the selected 3D Group
+  // Dynamically attach the TransformControls to the selected 3D Group
   useEffect(() => {
     if (mode === 'layout' && selectedFurniture && transformControlsRef.current && furnitureRefs.current[selectedFurniture]) {
       transformControlsRef.current.attach(furnitureRefs.current[selectedFurniture]);
@@ -304,7 +301,6 @@ function App() {
     setIsTransforming(true);
   };
 
-  // NEW: Only update React state AFTER the drag finishes. This stops the bouncing!
   const handleTransformMouseUp = () => {
     setIsTransforming(false);
     if (orbitControlsRef.current) orbitControlsRef.current.enabled = true;
@@ -325,11 +321,12 @@ function App() {
     setFurnitureItems(prev => prev.map(item => item.id === id ? { ...item, position, rotation, scale } : item));
   };
 
+  // ========== FIX 1: LOWERED SCALE MINIMUM FROM 0.1 TO 0.01 ==========
   const adjustSelectedFurnitureScale = (amount) => {
     if (!selectedFurniture) return;
     setFurnitureItems(prev => prev.map(item => {
       if (item.id === selectedFurniture) {
-        const newScale = Math.max(0.1, item.scale + amount);
+        const newScale = Math.max(0.01, item.scale + amount); // Changed here!
         return { ...item, scale: newScale };
       }
       return item;
@@ -408,7 +405,6 @@ function App() {
             <group>
               <RoomLayout wallColor={wallColor} floorTexture={floorTexture} />
               
-              {/* NEW: Map out items and assign physical Refs to them */}
               {furnitureItems.filter(item => item.visible).map((item) => {
                 const savedCustomizations = getHexCustomizationsForModel(item.type);
                 return (
@@ -432,14 +428,13 @@ function App() {
                 );
               })}
 
-              {/* NEW: The TransformControls stays mounted but gets attached to refs dynamically via useEffect */}
               <TransformControls 
                 ref={transformControlsRef} 
                 mode={transformMode} 
                 onMouseDown={handleTransformStart} 
                 onMouseUp={handleTransformMouseUp} 
-                showX={transformMode === 'rotate' ? false : true} // Hides awkward rings during rotation
-                showZ={transformMode === 'rotate' ? false : true} // Forces rotation to be purely horizontal
+                showX={transformMode === 'rotate' ? false : true} 
+                showZ={transformMode === 'rotate' ? false : true} 
               />
             </group>
           )}
@@ -451,7 +446,7 @@ function App() {
           )}
         </Canvas>
 
-        {/* Floating Badges pinned to the bottom left of the Canvas layer */}
+        {/* Floating Badges */}
         <div className="canvas-overlay-badges">
           <span className="badge">{mode === 'layout' ? 'Layout Mode' : 'Studio Mode'}</span>
           
@@ -472,7 +467,6 @@ function App() {
             </div>
             
             <div className="header-controls">
-              {/* Workspace Mode */}
               <div style={{ display: 'flex', background: 'var(--border-fine)', borderRadius: '99px', padding: '4px' }}>
                  <button className={`btn ${mode === 'customize' ? 'btn-primary' : ''}`} style={{border: 'none'}} onClick={() => handleModeChange('customize')} aria-pressed={mode === 'customize'}>Studio</button>
                  <button className={`btn ${mode === 'layout' ? 'btn-primary' : ''}`} style={{border: 'none'}} onClick={() => handleModeChange('layout')} aria-pressed={mode === 'layout'}>Layout</button>
@@ -480,14 +474,12 @@ function App() {
 
               <div style={{width: '1px', height: '24px', background: 'var(--border-fine)', margin: '0 0.5rem'}}></div>
 
-              {/* User Type */}
               <Tooltip text={userType === 'normal' ? "Switch to Accessible CVD Tools" : "Switch to Standard Designer Tools"}>
                  <button className={`btn ${userType === 'cvd' ? 'btn-primary' : ''}`} onClick={() => handleUserTypeChange(userType === 'normal' ? 'cvd' : 'normal')} aria-pressed={userType === 'cvd'}>
                    {userType === 'normal' ? 'Standard' : 'Inclusive'}
                  </button>
               </Tooltip>
 
-              {/* High Contrast */}
               <Tooltip text="High Contrast Overlay">
                  <button className={`btn ${highContrast ? 'btn-primary' : ''}`} onClick={() => setHighContrast(!highContrast)} aria-pressed={highContrast}>Contrast</button>
               </Tooltip>
@@ -537,12 +529,28 @@ function App() {
                   }
                 </div>
 
-                <div className="grid-2col" style={{marginTop: '1rem'}}>
-                  {textureList.map(t => (
-                    <button key={t.id} className={`btn ${currentTexture === t.id ? 'btn-primary' : ''}`} onClick={() => setCurrentTexture(t.id)}>
-                      {t.name}
-                    </button>
-                  ))}
+                {/* ========== FIX 2: ADDED DEDICATED REMOVE TEXTURE BUTTON ========== */}
+                <div style={{marginTop: '1.5rem'}}>
+                  <button 
+                    className="btn" 
+                    style={{
+                      width: '100%', 
+                      marginBottom: '0.5rem',
+                      border: '1px dashed var(--danger)', 
+                      color: 'var(--danger)',
+                      background: currentTexture === 'none' ? 'var(--surface-solid)' : 'transparent'
+                    }} 
+                    onClick={() => setCurrentTexture('none')}
+                  >
+                    ✕ Remove Texture
+                  </button>
+                  <div className="grid-2col">
+                    {textureList.filter(t => t.id !== 'none').map(t => (
+                      <button key={t.id} className={`btn ${currentTexture === t.id ? 'btn-primary' : ''}`} onClick={() => setCurrentTexture(t.id)}>
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -585,11 +593,11 @@ function App() {
                    
                    <h3 style={{borderBottom: 'none', padding: 0, margin: '1rem 0 0.5rem 0'}}>Scale</h3>
                    <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-                     <button className="btn" style={{flex: 1}} onClick={() => adjustSelectedFurnitureScale(-0.1)} aria-label="Decrease size">-</button>
+                     <button className="btn" style={{flex: 1}} onClick={() => adjustSelectedFurnitureScale(-0.05)} aria-label="Decrease size">-</button>
                      <span style={{fontSize: '0.85rem', fontWeight: 500, width: '40px', textAlign: 'center'}}>
                        {Math.round((furnitureItems.find(f => f.id === selectedFurniture)?.scale || 1) * 100)}%
                      </span>
-                     <button className="btn" style={{flex: 1}} onClick={() => adjustSelectedFurnitureScale(0.1)} aria-label="Increase size">+</button>
+                     <button className="btn" style={{flex: 1}} onClick={() => adjustSelectedFurnitureScale(0.01)} aria-label="Increase size">+</button>
                    </div>
                  </div>
                )}

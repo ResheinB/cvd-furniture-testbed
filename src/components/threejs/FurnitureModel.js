@@ -51,7 +51,7 @@ const FurnitureModel = forwardRef(({
         envMapIntensity: 1
       },
       'wood': { 
-        imageUrl: '/textures/wood.jpg',
+        imageUrl: '/textures/Wood1.jpg',
         repeat: [3, 3],
         roughness: 0.7,
         metalness: 0.1,
