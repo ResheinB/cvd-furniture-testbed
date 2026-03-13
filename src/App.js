@@ -121,12 +121,12 @@ function App() {
   
   const modelList = [
     { id: 'desk', name: 'Studio Desk', normalizedScale: 0.8 },
-    { id: 'chair', name: 'Task Chair', normalizedScale: 0.8 },
+    
     { id: 'wardrobe', name: 'Wardrobe', normalizedScale: 0.7 },
     { id: 'bookshelf', name: 'Bookshelf', normalizedScale: 0.9 },
     { id: 'bed', name: 'Platform Bed', normalizedScale: 0.5 },
     { id: 'sofa', name: 'Lounge Sofa', normalizedScale: 0.6 },
-    { id: 'table', name: 'Dining Table', normalizedScale: 0.8 },
+    
     { id: 'cabinet', name: 'Storage Cabinet', normalizedScale: 0.8 },
   ];
 
